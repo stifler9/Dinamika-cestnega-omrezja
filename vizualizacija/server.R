@@ -9,6 +9,11 @@
 
 library(shiny)
 
+# start
+source('~/RStudio/Matematika z racunalnikom/Dinamika-cestnega-omrezja/semafor.R')
+source('~/RStudio/Matematika z racunalnikom/Dinamika-cestnega-omrezja/nov_na_sek.R')
+source('~/RStudio/Matematika z racunalnikom/Dinamika-cestnega-omrezja/avti.R')
+
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
 
@@ -25,14 +30,11 @@ shinyServer(function(input, output) {
             dump('semafor', file = 'semafor.R')
             nov_na_sek = input$intenzivnost
             dump('nov_na_sek', file = 'nov_na_sek.R')
-            source('C:/Users/Zan/Documents/RStudio/Matematika z racunalnikom/Dinamika-cestnega-omrezja/avti.R')
+            source('~/RStudio/Matematika z racunalnikom/Dinamika-cestnega-omrezja/avti.R')
         }
 
         tavti = vsiavti[casi == input$t]
-        y = rep(0, length(tavti))
-        plot.new()
-        plot(tavti, y, type = 'p', xlim = c(0, dolzina), ylim = c(0, steps))
-
+        plot(tavti, rep(0, length(tavti)), type = 'p', xlim = c(0, dolzina), ylim = c(0, steps))
     })
 
 })

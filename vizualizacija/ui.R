@@ -7,9 +7,12 @@
 #    http://shiny.rstudio.com/
 #
 
-source('C:/Users/Zan/Documents/RStudio/Matematika z racunalnikom/Dinamika-cestnega-omrezja/avti.R')
-
 library(shiny)
+
+# start
+source('~/RStudio/Matematika z racunalnikom/Dinamika-cestnega-omrezja/semafor.R')
+source('~/RStudio/Matematika z racunalnikom/Dinamika-cestnega-omrezja/nov_na_sek.R')
+source('~/RStudio/Matematika z racunalnikom/Dinamika-cestnega-omrezja/avti.R')
 
 # Define UI for application that draws a histogram
 shinyUI(fluidPage(
@@ -25,7 +28,7 @@ shinyUI(fluidPage(
                         min = 0,
                         max = steps,
                         value = 0,
-                        animate = animationOptions(interval = 10)),
+                        animate = animationOptions(interval = 1000*interval)),
             
             sliderInput("semafor",
                         "Semafor:",
