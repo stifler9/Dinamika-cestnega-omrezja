@@ -59,9 +59,9 @@ premakni = function(avti, hitrosti, dt, rdeca){
     }
   }
   if(rbern(1, dt*nov_na_sek)){
-    rez = matrix(nrow = n+1, ncol = 2)
-    rez[,1] = c(0.0,noviavti)
-    rez[,2] = c(rnorm(1, koncna, 3), novehitrosti)
+    rez = matrix(nrow = n + 1, ncol = 2)
+    rez[,1] = c(0.0, noviavti)
+    rez[,2] = c(runif(1, koncna - 3, koncna + 3), novehitrosti)
     return(rez)
   }
   rez = matrix(nrow = n, ncol = 2)

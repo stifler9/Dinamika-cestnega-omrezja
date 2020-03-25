@@ -27,9 +27,9 @@ shinyServer(function(input, output) {
         }
         if(!istisemafor | (nov_na_sek != input$intenzivnost)){
             semafor = input$semafor
-            dump('semafor', file = 'semafor.R')
+            dump('semafor', file = '~/RStudio/Matematika z racunalnikom/Dinamika-cestnega-omrezja/semafor.R')
             nov_na_sek = input$intenzivnost
-            dump('nov_na_sek', file = 'nov_na_sek.R')
+            dump('nov_na_sek', file = '~/RStudio/Matematika z racunalnikom/Dinamika-cestnega-omrezja/nov_na_sek.R')
             source('~/RStudio/Matematika z racunalnikom/Dinamika-cestnega-omrezja/avti.R')
         }
 
