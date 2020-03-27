@@ -9,8 +9,7 @@
 
 library(Rlab)
 library(shiny)
-library(doParallel)
-registerDoParallel(cores = 4)
+library(foreach)
 
 ui <- fluidPage(
     
@@ -130,7 +129,7 @@ server <- function(input, output) {
         novehitrosti = vector(length = n)
         i = 1
         
-        pospeski <- foreach(j = 1:(n-1), .combine = 'rbind') %do% 
+        pospeski <- foreach(j = 1:(n-1), .combine = c) %do% 
             acc(odziv$hitrosti[[cesta]][j], 
                 odziv$hitrosti[[cesta]][j+1], 
                 odziv$avti[[cesta]][j+1] - odziv$avti[[cesta]][j])
@@ -210,8 +209,8 @@ server <- function(input, output) {
     
     observeEvent(input$reset,{
         odziv$resetind <- 0
-        odziv$avti <- c(0.1, 0.15, 0.2, 0.5, 0.7, 0.8, 0.85, 0.88, 0.9)*dolzina
-        odziv$hitrosti <- c(13, 17, 17, 18, 16, 15, 15, 14, 14)
+        odziv$avti <- list(ab = c(0.1, 0.15, 0.2, 0.5, 0.7, 0.8, 0.85, 0.88, 0.9)*dolzine$"ab")
+        odziv$hitrosti <- list(ab = c(13, 17, 17, 18, 16, 15, 15, 14, 14)) #m/s
     })
     
     # izrisemo trenutno stanje avtov
