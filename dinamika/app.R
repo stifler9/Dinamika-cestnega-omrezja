@@ -19,13 +19,14 @@ ui <- fluidPage(
     sidebarLayout(
         sidebarPanel(
             fluidRow(
+                column(5,numericInput("skipnum", "Korakov:", 1)),
+                column(7,actionButton("skip","Next")),
                 column(7,uiOutput("resetbutton"))
             ),
             fluidRow(
-                column(5,numericInput("skipnum", "Korakov:", 1)),
-                column(7,actionButton("skip","Next"))
+                h5("Semafor (ab->bc):"),
+                uiOutput("semaforabbc")
             ),
-            selectInput("semafor","Semafor:",choices=c("Rdeca","Zelena")),
             sliderInput("intenzivnost",
                         "Intenzivnost prihoda novih (/s):",
                         min = 0.0,
@@ -108,6 +109,8 @@ server <- function(input, output) {
                        bc = c())
     odziv$hitrosti <- list(ab = c(13, 17, 17, 18, 16, 15, 15, 14, 14),
                            bc = c()) #m/s
+    #semaforji, iz kje kam, ce je list prazen je zelena
+    odziv$semaforji <- list(abbc = c(TRUE))
     #kam gre naslednji avto
     odziv$kam = list(ab = zrebaj("ab"))
     #za shranjevanje avtov ki so prisli na novo cesto
@@ -122,18 +125,18 @@ server <- function(input, output) {
         actionButton("reset",label=lbl)
     })
     
+    output$semaforabbc<-renderUI({
+        if(length(odziv$semaforji$abbc)>0){
+            lbl<-"Rdeca"
+        }else{
+            lbl<-"Zelena"
+        }
+        actionButton("semaforAbBc",label=lbl)
+    })
+    
     # funkcija premika avtomobilov pri spremembi casa dt
     premaknicesto = function(cesta, zacetna){
-        
-        # te spremenljivke potrebujemo a nove izracune
-        req(input$semafor)
-        req(input$intenzivnost)
-        req(input$hitrost)
-        req(input$lambda)
-        
-        # indikator se spremeni na Reset
-        odziv$resetind <- 1
-        
+
         # funkcija pospeska
         acc = function(v1, v2, gap){
             if((v1^2/(2*bremza)) > (v2^2/(2*bremza)) + gap - avto - varnost){
@@ -199,7 +202,7 @@ server <- function(input, output) {
                     odziv$kam[[cesta]] = zrebaj(cesta)
                 }
             }else{
-                if(input$semafor == "Rdeca"){
+                if(length(odziv$semaforji[[paste(cesta, odziv$kam[[cesta]], sep='')]]) > 0){
                     # ce je na koncu rdeca luc
                     novehitrosti[n] = max(0, odziv$hitrosti[[cesta]][n] + acc(odziv$hitrosti[[cesta]][n], 
                                                                               0, 
@@ -240,14 +243,24 @@ server <- function(input, output) {
             odziv$avti[[cesta]] = noviavti
             odziv$hitrosti[[cesta]] = novehitrosti
         }
-        for(c in povezave[[cesta]]){
-            premaknicesto(c, FALSE)
-        }
     }
     
     premakni <- function(){
-        for(z in zacetki){
-            premaknicesto(z, TRUE)
+        
+        # te spremenljivke potrebujemo za nove izracune
+        req(input$intenzivnost)
+        req(input$hitrost)
+        req(input$lambda)
+        
+        # indikator se spremeni na Reset
+        odziv$resetind <- 1
+        
+        for(c in names(ceste)){
+            if(c %in% zacetki){
+                premaknicesto(c, TRUE)
+            }else{
+                premaknicesto(c, FALSE)
+            }
         }
         for(c in names(ceste)){
             if(length(odziv$noviavti[[c]]) == 2){
@@ -263,6 +276,14 @@ server <- function(input, output) {
         req(input$skipnum)
         for(i in 1:input$skipnum){
             premakni()
+        }
+    })
+    
+    observeEvent(input$semaforAbBc,{
+        if(length(odziv$semaforji$abbc)>0){
+            odziv$semaforji$abbc = c()
+        }else{
+            odziv$semaforji$abbc = c(TRUE)
         }
     })
     
@@ -287,7 +308,7 @@ server <- function(input, output) {
                            bc = c())
         odziv$hitrosti <- list(ab = c(13, 17, 17, 18, 16, 15, 15, 14, 14),
                                bc = c()) #m/s
-        #kam gre naslednji avto
+        odziv$semaforji <- list(abbc = c(TRUE))
         odziv$kam = list(ab = zrebaj("ab"))
     })
     
