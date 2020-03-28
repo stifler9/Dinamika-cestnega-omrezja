@@ -9,7 +9,6 @@
 
 library(Rlab)
 library(shiny)
-library(foreach)
 
 ui <- fluidPage(
     
@@ -81,7 +80,7 @@ server <- function(input, output) {
     koor$"c"$y = 1000
     
     avto = 5 #m (dolzina avta)
-    varnost = 2 #m (koliko prej se zeli ustaviti)
+    varnost = 5 #m (koliko prej se zeli ustaviti)
     bremza = -10
     #m/s^2
     maxposp = 10
@@ -111,6 +110,8 @@ server <- function(input, output) {
                            bc = c()) #m/s
     #kam gre naslednji avto
     odziv$kam = list(ab = zrebaj("ab"))
+    #za shranjevanje avtov ki so prisli na novo cesto
+    odziv$noviavti = list(ab = c(), bc = c())
     
     output$resetbutton<-renderUI({
         if(odziv$resetind==0){
@@ -122,7 +123,7 @@ server <- function(input, output) {
     })
     
     # funkcija premika avtomobilov pri spremembi casa dt
-    premaknicesto = function(cesta, zacetna, novavto){
+    premaknicesto = function(cesta, zacetna){
         
         # te spremenljivke potrebujemo a nove izracune
         req(input$semafor)
@@ -140,7 +141,7 @@ server <- function(input, output) {
                 # na varnostni razdalji, ce bo avto pred njim zabremzal.
                 return(bremza)
             }
-            if(gap > 4*(input$hitrost/3.6)){
+            if(gap > 4*v1){
                 rez = input$lambda*((input$hitrost/3.6) - v1)
             }else{
                 rez = input$lambda*(v2 - v1)
@@ -154,15 +155,11 @@ server <- function(input, output) {
         avtonaprej = c()
         if(n > 0){
             i = 1
-            if(n > 1){
-                pospeski <- foreach(j = 1:(n-1), .combine = c) %do% 
-                    acc(odziv$hitrosti[[cesta]][j], 
-                        odziv$hitrosti[[cesta]][j+1], 
-                        odziv$avti[[cesta]][j+1] - odziv$avti[[cesta]][j])
-            }
             while(i < n){
                 noviavti[i] = odziv$avti[[cesta]][i] + odziv$hitrosti[[cesta]][i]*dt
-                novehitrosti[i] = max(odziv$hitrosti[[cesta]][i] + pospeski[[i]]*dt, 0)
+                novehitrosti[i] = max(odziv$hitrosti[[cesta]][i] + acc(odziv$hitrosti[[cesta]][i], 
+                                                                       odziv$hitrosti[[cesta]][i+1], 
+                                                                       odziv$avti[[cesta]][i+1] - odziv$avti[[cesta]][i])*dt, 0)
                 i = i+1
             }
             noviavti[n] = odziv$avti[[cesta]][n] + odziv$hitrosti[[cesta]][n]*dt
@@ -188,17 +185,18 @@ server <- function(input, output) {
                     }
                     if(length(odziv$avti[[odziv$kam[[cesta]]]]) == 0){
                         # ce je naslednja cesta prazna
-                        avtonaprej = c(a_nap - dolzine[[cesta]],
+                        odziv$noviavti[[odziv$kam[[cesta]]]] = c(a_nap - dolzine[[cesta]],
                                        max(0, odziv$hitrosti[[cesta]][n+1] + acc(odziv$hitrosti[[cesta]][n+1], 
                                                                                input$hitrost/3.6, 
                                                                                200)*dt))
                     }else{
                         # ce ne se prilagaja avtu na naslednji cesti
-                        avtonaprej = c(a_nap - dolzine[[cesta]],
+                        odziv$noviavti[[odziv$kam[[cesta]]]] = c(a_nap - dolzine[[cesta]],
                                        max(0, odziv$hitrosti[[cesta]][n+1] + acc(odziv$hitrosti[[cesta]][n+1], 
                                                                                odziv$hitrosti[[odziv$kam[[cesta]]]][1], 
                                                                                dolzine[[cesta]] - odziv$avti[[cesta]][n+1] + odziv$avti[[odziv$kam[[cesta]]]][1])*dt))
                     }
+                    odziv$kam[[cesta]] = zrebaj(cesta)
                 }
             }else{
                 if(input$semafor == "Rdeca"){
@@ -239,30 +237,24 @@ server <- function(input, output) {
                 odziv$hitrosti[[cesta]] = novehitrosti
             }
         }else{
-            if(length(novavto) == 2){
-                #ce imamo nov avto na zacetku
-                odziv$avti[[cesta]] = c(novavto[1], noviavti)
-                odziv$hitrosti[[cesta]] = c(novavto[2], novehitrosti)
-            }else{
-                odziv$avti[[cesta]] = noviavti
-                odziv$hitrosti[[cesta]] = novehitrosti
-            }
+            odziv$avti[[cesta]] = noviavti
+            odziv$hitrosti[[cesta]] = novehitrosti
         }
         for(c in povezave[[cesta]]){
-            if(c == odziv$kam[[cesta]]){
-                premaknicesto(c, FALSE, avtonaprej)
-                if(length(avtonaprej) == 2){
-                    odziv$kam[[cesta]] = zrebaj(cesta)
-                }
-            }else{
-                premaknicesto(c, FALSE, c())
-            }
+            premaknicesto(c, FALSE)
         }
     }
     
     premakni <- function(){
         for(z in zacetki){
-            premaknicesto(z, TRUE, c())
+            premaknicesto(z, TRUE)
+        }
+        for(c in names(ceste)){
+            if(length(odziv$noviavti[[c]]) == 2){
+                odziv$avti[[c]] = c(odziv$noviavti[[c]][1], odziv$avti[[c]])
+                odziv$hitrosti[[c]] = c(odziv$noviavti[[c]][2], odziv$hitrosti[[c]])
+                odziv$noviavti[[c]] = c()
+            }
         }
     }
     
@@ -290,12 +282,12 @@ server <- function(input, output) {
     })
     
     observeEvent(input$reset,{
-        odziv <- reactiveValues()
         odziv$resetind <- 0
         odziv$avti <- list(ab = c(0.1, 0.15, 0.2, 0.5, 0.7, 0.8, 0.85, 0.88, 0.9)*dolzine$"ab",
                            bc = c())
         odziv$hitrosti <- list(ab = c(13, 17, 17, 18, 16, 15, 15, 14, 14),
-                               bc = c())
+                               bc = c()) #m/s
+        #kam gre naslednji avto
         odziv$kam = list(ab = zrebaj("ab"))
     })
     
