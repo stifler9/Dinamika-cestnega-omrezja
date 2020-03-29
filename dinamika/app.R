@@ -24,8 +24,11 @@ ui <- fluidPage(
                 column(7,uiOutput("resetbutton"))
             ),
             fluidRow(
-                h5("Semafor (ab->bc):"),
+                column(4,h5("Semafor (ab->bc):")),
                 uiOutput("semaforabbc")
+            ),
+            fluidRow(
+                h5("Prehodna AB: [BC : 1/3 | BD : 2/3]")              
             ),
             sliderInput("intenzivnost",
                         "Intenzivnost prihoda novih (/s):",
@@ -33,18 +36,30 @@ ui <- fluidPage(
                         max = 2.0,
                         step = 0.05,
                         value = 0.3),
-            sliderInput("hitrost",
-                        "Omejitev hitrosti (km/h):",
-                        min = 30,
-                        max = 130,
-                        step = 5,
-                        value = 70),
-            sliderInput("lambda",
-                        "Prilagajalni faktor (lambda):",
-                        min = 0.5,
-                        max = 15,
-                        step = 0.5,
-                        value = 3.5),
+            column(6,
+                sliderInput("hitrostab",
+                            "Omejitev hitrosti AB (km/h):",
+                            min = 30,
+                            max = 130,
+                            step = 5,
+                            value = 70)
+            ),
+            column(6,
+                   sliderInput("hitrostbc",
+                               "Omejitev hitrosti BC (km/h):",
+                               min = 30,
+                               max = 130,
+                               step = 5,
+                               value = 70)
+            ),
+            column(6,
+                   sliderInput("hitrostbd",
+                               "Omejitev hitrosti BD (km/h):",
+                               min = 30,
+                               max = 130,
+                               step = 5,
+                               value = 70)
+            ),
             fluidRow(
                 column(7,actionButton("stop","Stop")),
                 column(3,actionButton("play","Play"))
@@ -63,23 +78,28 @@ server <- function(input, output) {
     dolzine = NULL
     dolzine$"ab" = 1000
     dolzine$"bc" = 700
+    dolzine$"bd" = 800
     
     ceste = NULL
     ceste$"ab" = c("a", "b", 'blue')
     ceste$"bc" = c("b", "c", 'red')
+    ceste$"bd" = c("b", "d", 'green4')
     povezave = NULL
-    povezave$"ab" = c("bc")
+    povezave$"ab" = c("bc","bd")
     prehodne = NULL
-    prehodne$"ab" = c(1.0)
+    prehodne$"ab" = c(1/3,2/3)
     
     koor = NULL
     koor$"a"$x = 0
-    koor$"a"$y = 0
-    koor$"b"$x = 1000
-    koor$"b"$y = 500
-    koor$"c"$x = 500
-    koor$"c"$y = 1000
+    koor$"a"$y = 500
+    koor$"b"$x = 600
+    koor$"b"$y = 0
+    koor$"c"$x = 1000
+    koor$"c"$y = 600
+    koor$"d"$x = 700
+    koor$"d"$y = 900
     
+    lambda = 3 #prilagajalni faktor
     avto = 5 #m (dolzina avta)
     varnost = 5 #m (koliko prej se zeli ustaviti)
     bremza = -10
@@ -145,9 +165,9 @@ server <- function(input, output) {
                 return(bremza)
             }
             if(gap > 4*v1){
-                rez = input$lambda*((input$hitrost/3.6) - v1)
+                rez = lambda*((input[[paste("hitrost",cesta,sep='')]]/3.6) - v1)
             }else{
-                rez = input$lambda*(v2 - v1)
+                rez = lambda*(v2 - v1)
             }
             return(min(max(bremza, rez), maxposp))
         }
@@ -189,15 +209,15 @@ server <- function(input, output) {
                     if(length(odziv$avti[[odziv$kam[[cesta]]]]) == 0){
                         # ce je naslednja cesta prazna
                         odziv$noviavti[[odziv$kam[[cesta]]]] = c(a_nap - dolzine[[cesta]],
-                                       max(0, odziv$hitrosti[[cesta]][n+1] + acc(odziv$hitrosti[[cesta]][n+1], 
-                                                                               input$hitrost/3.6, 
-                                                                               200)*dt))
+                                                                 max(0, odziv$hitrosti[[cesta]][n+1] + acc(odziv$hitrosti[[cesta]][n+1],
+                                                                                                           input[[paste("hitrost",cesta,sep='')]]/3.6,
+                                                                                                           200)*dt))
                     }else{
                         # ce ne se prilagaja avtu na naslednji cesti
                         odziv$noviavti[[odziv$kam[[cesta]]]] = c(a_nap - dolzine[[cesta]],
-                                       max(0, odziv$hitrosti[[cesta]][n+1] + acc(odziv$hitrosti[[cesta]][n+1], 
-                                                                               odziv$hitrosti[[odziv$kam[[cesta]]]][1], 
-                                                                               dolzine[[cesta]] - odziv$avti[[cesta]][n+1] + odziv$avti[[odziv$kam[[cesta]]]][1])*dt))
+                                                                 max(0, odziv$hitrosti[[cesta]][n+1] + acc(odziv$hitrosti[[cesta]][n+1],
+                                                                                                           odziv$hitrosti[[odziv$kam[[cesta]]]][1],
+                                                                                                           dolzine[[cesta]] - odziv$avti[[cesta]][n+1] + odziv$avti[[odziv$kam[[cesta]]]][1])*dt))
                     }
                     odziv$kam[[cesta]] = zrebaj(cesta)
                 }
@@ -211,20 +231,20 @@ server <- function(input, output) {
                     if(length(povezave[[cesta]]) == 0){
                         #ce ni naprej ceste
                         novehitrosti[n] = max(0, odziv$hitrosti[[cesta]][n] + acc(odziv$hitrosti[[cesta]][n], 
-                                                                                  input$hitrost/3.6, 
+                                                                                  input[[paste("hitrost",cesta,sep='')]]/3.6, 
                                                                                   200)*dt)
                     }else{
                         # na koncu druga cesta
                         if(length(odziv$avti[[odziv$kam[[cesta]]]]) == 0){
                             # ce je naslednja cesta prazna
                             novehitrosti[n] = max(0, odziv$hitrosti[[cesta]][n] + acc(odziv$hitrosti[[cesta]][n], 
-                                                                                   input$hitrost/3.6, 
-                                                                                   200)*dt)
+                                                                                      input[[paste("hitrost",cesta,sep='')]]/3.6, 
+                                                                                      200)*dt)
                         }else{
                             # ce ne se prilagaja avtu na naslednji cesti
                             novehitrosti[n] = max(0, odziv$hitrosti[[cesta]][n] + acc(odziv$hitrosti[[cesta]][n], 
-                                                                                   odziv$hitrosti[[odziv$kam[[cesta]]]][1], 
-                                                                                   dolzine[[cesta]] - odziv$avti[[cesta]][n] + odziv$avti[[odziv$kam[[cesta]]]][1])*dt)
+                                                                                      odziv$hitrosti[[odziv$kam[[cesta]]]][1], 
+                                                                                      dolzine[[cesta]] - odziv$avti[[cesta]][n] + odziv$avti[[odziv$kam[[cesta]]]][1])*dt)
                         }
                     }
                 }
@@ -234,7 +254,10 @@ server <- function(input, output) {
             if(rbern(1, dt*input$intenzivnost)){
                 # ce se na zacetku pojavi nov avto
                 odziv$avti[[cesta]] = c(0.0, noviavti)
-                odziv$hitrosti[[cesta]] = c(runif(1, (input$hitrost - 10)/3.6, (input$hitrost + 10)/3.6), novehitrosti)
+                odziv$hitrosti[[cesta]] = c(runif(1, 
+                                                  (input[[paste("hitrost",cesta,sep='')]] - 10)/3.6,
+                                                  (input[[paste("hitrost",cesta,sep='')]] + 10)/3.6)
+                                            , novehitrosti)
             }else{
                 odziv$avti[[cesta]] = noviavti
                 odziv$hitrosti[[cesta]] = novehitrosti
@@ -249,8 +272,9 @@ server <- function(input, output) {
         
         # te spremenljivke potrebujemo za nove izracune
         req(input$intenzivnost)
-        req(input$hitrost)
-        req(input$lambda)
+        req(input$hitrostab)
+        req(input$hitrostbc)
+        req(input$hitrostbd)
         
         # indikator se spremeni na Reset
         odziv$resetind <- 1
