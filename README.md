@@ -16,5 +16,4 @@ Postavljena Shiny aplikacija (datoteka app.R za zagon). Ta nam dopusca:
 * da spreminjamo rdeco in zelono luc na semaforju,
 * da dolocamo koliko novih avtomobilov v povprecju prihaja na sekundo,
 * da dolocimo omejitev hitrosti,
-* da dolocimo prilagajalni faktor lambda (za pospesek),
 * da pozenemo ali ustavimo model.
