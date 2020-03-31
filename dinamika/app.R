@@ -30,11 +30,11 @@ ui <- fluidPage(
             fluidRow(
                 h5("Prehodna AB: [BC : 1/3 | BD : 2/3]")              
             ),
-            sliderInput("intenzivnost",
-                        "Intenzivnost prihoda novih (/s):",
+            sliderInput("intenzivnostab",
+                        "Intenzivnost prihoda novih AB (/s):",
                         min = 0.0,
-                        max = 2.0,
-                        step = 0.05,
+                        max = 1.0,
+                        step = 0.02,
                         value = 0.3),
             column(6,
                 sliderInput("hitrostab",
@@ -67,7 +67,7 @@ ui <- fluidPage(
         ),
         
         mainPanel(
-            plotOutput("omrezje")
+            plotOutput("omrezje", height = '800px')
         )
     )
 )
@@ -93,7 +93,7 @@ server <- function(input, output) {
     koor$"a"$x = 0
     koor$"a"$y = 500
     koor$"b"$x = 600
-    koor$"b"$y = 0
+    koor$"b"$y = 200
     koor$"c"$x = 1000
     koor$"c"$y = 600
     koor$"d"$x = 700
@@ -200,11 +200,12 @@ server <- function(input, output) {
                 }else{
                     a_nap = noviavti[n]
                     n = n-1
-                    noviavti = noviavti[1:n]
-                    novehitrosti = novehitrosti[1:n]
                     if(n == 0){
                         noviavti = c()
                         novehitrosti = c()
+                    }else{
+                        noviavti = noviavti[1:n]
+                        novehitrosti = novehitrosti[1:n]
                     }
                     if(length(odziv$avti[[odziv$kam[[cesta]]]]) == 0){
                         # ce je naslednja cesta prazna
@@ -251,7 +252,7 @@ server <- function(input, output) {
             }
         }
         if(zacetna){
-            if(rbern(1, dt*input$intenzivnost)){
+            if(rbern(1, dt*input[[paste("intenzivnost", cesta, sep = '')]])){
                 # ce se na zacetku pojavi nov avto
                 odziv$avti[[cesta]] = c(0.0, noviavti)
                 odziv$hitrosti[[cesta]] = c(runif(1, 
@@ -271,7 +272,7 @@ server <- function(input, output) {
     premakni <- function(){
         
         # te spremenljivke potrebujemo za nove izracune
-        req(input$intenzivnost)
+        req(input$intenzivnostab)
         req(input$hitrostab)
         req(input$hitrostbc)
         req(input$hitrostbd)
@@ -339,6 +340,7 @@ server <- function(input, output) {
     # izrisemo trenutno stanje avtov
     output$omrezje <- renderPlot({
         plot(c(0,1000, 1000, 0, 0), c(0,0, 1000, 1000, 0), type = 'l', xlim = c(0, 1000), ylim = c(0,1000), xlab = 'x', ylab = 'y')
+        barve = c()
         for (c in names(ceste)) {
             lines(c(koor[[ceste[[c]][1]]]$x, koor[[ceste[[c]][2]]]$x), c(koor[[ceste[[c]][1]]]$y, koor[[ceste[[c]][2]]]$y), col = ceste[[c]][3])
             if(length(odziv$avti[[c]]) > 0){
@@ -346,7 +348,9 @@ server <- function(input, output) {
                 y = (odziv$avti[[c]]/dolzine[[c]])*(koor[[ceste[[c]][2]]]$y - koor[[ceste[[c]][1]]]$y) + koor[[ceste[[c]][1]]]$y
                 points(x, y, col = ceste[[c]][3])
             }
+            barve = c(barve, ceste[[c]][3])
         }
+        legend(0, 1000, legend = names(ceste), col = barve, lty=1, cex=1)
     })
 }
 
