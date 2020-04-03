@@ -15,7 +15,6 @@ ui <- fluidPage(
     # Application title
     titlePanel("Dinamika cestnega omrezja"),
     
-    # Sidebar with a slider input for number of bins
     sidebarLayout(
         sidebarPanel(
             fluidRow(
@@ -30,6 +29,7 @@ ui <- fluidPage(
             fluidRow(
                 h5("Prehodna AB: [BC : 1/3 | BD : 2/3]")              
             ),
+            # inputi potrebni za izracune
             sliderInput("intenzivnostab",
                         "Intenzivnost prihoda novih AB (/s):",
                         min = 0.0,
@@ -60,6 +60,7 @@ ui <- fluidPage(
                                step = 5,
                                value = 70)
             ),
+            #
             fluidRow(
                 column(7,actionButton("stop","Stop")),
                 column(3,actionButton("play","Play"))
@@ -74,6 +75,8 @@ ui <- fluidPage(
 
 server <- function(input, output) {
     
+    # konstantni podatki o cestah, povezanosti, prehodnosti
+    #
     zacetki = c("ab")
     dolzine = NULL
     dolzine$"ab" = 1000
@@ -109,15 +112,20 @@ server <- function(input, output) {
     dt = 1/20
     #sprememba casa
     
+    # funkcija ki zreba na katero cesto zeli avto, ki pride do konca,
+    # glede na prehodno verjetnost
     zrebaj <- function(cesta){
-        u = runif(1)
         i = 1
-        while(i < length(prehodne[[cesta]])){
-            u = u - prehodne[[cesta]][i]
-            if(u <= 0.0){
-                break
+        n = length(prehodne[[cesta]])
+        if(n > 1){
+            u = runif(1)
+            while(i < n){
+                u = u - prehodne[[cesta]][i]
+                if(u <= 0.0){
+                    break
+                }
+                i = i+1
             }
-            i = i+1
         }
         return(povezave[[cesta]][i])
     }
@@ -129,12 +137,12 @@ server <- function(input, output) {
                        bc = c())
     odziv$hitrosti <- list(ab = c(13, 17, 17, 18, 16, 15, 15, 14, 14),
                            bc = c()) #m/s
-    #semaforji, iz kje kam, ce je list prazen je zelena
+    #semaforji, "iz kje" + "kam", ce je list prazen je zelena
     odziv$semaforji <- list(abbc = c(TRUE))
     #kam gre naslednji avto
     odziv$kam = list(ab = zrebaj("ab"))
     #za shranjevanje avtov ki so prisli na novo cesto
-    odziv$noviavti = list(ab = c(), bc = c())
+    odziv$noviavti = list(bc = c(), bd = c())
     
     output$resetbutton<-renderUI({
         if(odziv$resetind==0){
@@ -154,7 +162,7 @@ server <- function(input, output) {
         actionButton("semaforAbBc",label=lbl)
     })
     
-    # funkcija premika avtomobilov pri spremembi casa dt
+    # funkcija premika avtomobilov na cesti pri spremembi casa dt
     premaknicesto = function(cesta, zacetna){
 
         # funkcija pospeska
@@ -257,8 +265,8 @@ server <- function(input, output) {
                 odziv$avti[[cesta]] = c(0.0, noviavti)
                 odziv$hitrosti[[cesta]] = c(runif(1, 
                                                   (input[[paste("hitrost",cesta,sep='')]] - 10)/3.6,
-                                                  (input[[paste("hitrost",cesta,sep='')]] + 10)/3.6)
-                                            , novehitrosti)
+                                                  (input[[paste("hitrost",cesta,sep='')]] + 10)/3.6),
+                                            novehitrosti)
             }else{
                 odziv$avti[[cesta]] = noviavti
                 odziv$hitrosti[[cesta]] = novehitrosti
@@ -269,6 +277,7 @@ server <- function(input, output) {
         }
     }
     
+    # funkcija premika avtomobilov na vseh cestah
     premakni <- function(){
         
         # te spremenljivke potrebujemo za nove izracune
@@ -335,6 +344,7 @@ server <- function(input, output) {
                                bc = c()) #m/s
         odziv$semaforji <- list(abbc = c(TRUE))
         odziv$kam = list(ab = zrebaj("ab"))
+        odziv$noviavti = list(bc = c(), bd = c())
     })
     
     # izrisemo trenutno stanje avtov
