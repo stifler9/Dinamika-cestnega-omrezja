@@ -152,7 +152,7 @@ server <- function(input, output) {
     #za shranjevanje avtov ki so prisli na novo cesto
     odziv$noviavti = list(bc = c(), bd = c())
     #izpisujemo povprecne hitrosti na cestah
-    odziv$povprecnehit = c(1:(length(names(ceste))))
+    odziv$povprecnehit = rep(0,length(names(ceste)))
     
     output$resetbutton<-renderUI({
         if(odziv$resetind==0){
@@ -369,14 +369,23 @@ server <- function(input, output) {
     output$omrezje <- renderPlot({
         plot(c(0,1000, 1000, 0, 0), c(0,0, 1000, 1000, 0), type = 'l', xlim = c(0, 1000), ylim = c(0,1000), xlab = 'x', ylab = 'y')
         barve = c()
+        i = 1
         for (c in names(ceste)) {
-            lines(c(koor[[ceste[[c]][1]]]$x, koor[[ceste[[c]][2]]]$x), c(koor[[ceste[[c]][1]]]$y, koor[[ceste[[c]][2]]]$y), col = ceste[[c]][3])
+            obr = odziv$povprecnehit[i]/input[[paste("hitrost", c, sep='')]]
+            obrbarva = ""
+            if(obr > 1/2){
+                obrbarva = rgb(min(1,max(0,(1-obr)*2)), 1, 0, 1)
+            }else{
+                obrbarva = rgb(1, min(1,max(0,2*obr)), 0, 1)
+            }
+            lines(c(koor[[ceste[[c]][1]]]$x, koor[[ceste[[c]][2]]]$x), c(koor[[ceste[[c]][1]]]$y, koor[[ceste[[c]][2]]]$y), col = obrbarva)
             if(length(odziv$avti[[c]]) > 0){
                 x = (odziv$avti[[c]]/dolzine[[c]])*(koor[[ceste[[c]][2]]]$x - koor[[ceste[[c]][1]]]$x) + koor[[ceste[[c]][1]]]$x
                 y = (odziv$avti[[c]]/dolzine[[c]])*(koor[[ceste[[c]][2]]]$y - koor[[ceste[[c]][1]]]$y) + koor[[ceste[[c]][1]]]$y
                 points(x, y, col = ceste[[c]][3])
             }
             barve = c(barve, ceste[[c]][3])
+            i = i+1
         }
         legend(0, 1000, legend = names(ceste), col = barve, lty=1, cex=1)
     })
