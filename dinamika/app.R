@@ -61,14 +61,22 @@ ui <- fluidPage(
                                value = 70)
             ),
             #
+            
             fluidRow(
-                column(7,actionButton("stop","Stop")),
-                column(3,actionButton("play","Play"))
+                column(4,actionButton("stop","Stop"), actionButton("play","Play")),
+                column(7,sliderInput('animacija', "Hitrost animacije:",
+                                     min=0.25,
+                                     max=4,
+                                     step = 0.25,
+                                     value = 1))
             )
         ),
         
         mainPanel(
-            plotOutput("omrezje", height = '800px')
+            tabsetPanel(
+                tabPanel("Avti", plotOutput("omrezje", height = '800px')),
+                tabPanel("Povprecne hitrosti", tableOutput('povphit'))
+            )
         )
     )
 )
@@ -143,6 +151,8 @@ server <- function(input, output) {
     odziv$kam = list(ab = zrebaj("ab"))
     #za shranjevanje avtov ki so prisli na novo cesto
     odziv$noviavti = list(bc = c(), bd = c())
+    #izpisujemo povprecne hitrosti na cestah
+    odziv$povprecnehit = c(1:(length(names(ceste))))
     
     output$resetbutton<-renderUI({
         if(odziv$resetind==0){
@@ -187,13 +197,13 @@ server <- function(input, output) {
         if(n > 0){
             i = 1
             while(i < n){
-                noviavti[i] = odziv$avti[[cesta]][i] + odziv$hitrosti[[cesta]][i]*dt
+                noviavti[i] = odziv$avti[[cesta]][i] + odziv$hitrosti[[cesta]][i]*dt*input$animacija
                 novehitrosti[i] = max(odziv$hitrosti[[cesta]][i] + acc(odziv$hitrosti[[cesta]][i], 
                                                                        odziv$hitrosti[[cesta]][i+1], 
-                                                                       odziv$avti[[cesta]][i+1] - odziv$avti[[cesta]][i])*dt, 0)
+                                                                       odziv$avti[[cesta]][i+1] - odziv$avti[[cesta]][i])*dt*input$animacija, 0)
                 i = i+1
             }
-            noviavti[n] = odziv$avti[[cesta]][n] + odziv$hitrosti[[cesta]][n]*dt
+            noviavti[n] = odziv$avti[[cesta]][n] + odziv$hitrosti[[cesta]][n]*dt*input$animacija
             if(noviavti[n] > dolzine[[cesta]]){
                 # ce vodilni avto pride do konca
                 if(length(odziv$kam[[cesta]]) == 0){
@@ -220,13 +230,13 @@ server <- function(input, output) {
                         odziv$noviavti[[odziv$kam[[cesta]]]] = c(a_nap - dolzine[[cesta]],
                                                                  max(0, odziv$hitrosti[[cesta]][n+1] + acc(odziv$hitrosti[[cesta]][n+1],
                                                                                                            input[[paste("hitrost",cesta,sep='')]]/3.6,
-                                                                                                           200)*dt))
+                                                                                                           200)*dt*input$animacija))
                     }else{
                         # ce ne se prilagaja avtu na naslednji cesti
                         odziv$noviavti[[odziv$kam[[cesta]]]] = c(a_nap - dolzine[[cesta]],
                                                                  max(0, odziv$hitrosti[[cesta]][n+1] + acc(odziv$hitrosti[[cesta]][n+1],
                                                                                                            odziv$hitrosti[[odziv$kam[[cesta]]]][1],
-                                                                                                           dolzine[[cesta]] - odziv$avti[[cesta]][n+1] + odziv$avti[[odziv$kam[[cesta]]]][1])*dt))
+                                                                                                           dolzine[[cesta]] - odziv$avti[[cesta]][n+1] + odziv$avti[[odziv$kam[[cesta]]]][1])*dt*input$animacija))
                     }
                     odziv$kam[[cesta]] = zrebaj(cesta)
                 }
@@ -235,25 +245,25 @@ server <- function(input, output) {
                     # ce je na koncu rdeca luc
                     novehitrosti[n] = max(0, odziv$hitrosti[[cesta]][n] + acc(odziv$hitrosti[[cesta]][n], 
                                                                               0, 
-                                                                              dolzine[[cesta]] - odziv$avti[[cesta]][n])*dt)
+                                                                              dolzine[[cesta]] - odziv$avti[[cesta]][n])*dt*input$animacija)
                 }else{
                     if(length(povezave[[cesta]]) == 0){
                         #ce ni naprej ceste
                         novehitrosti[n] = max(0, odziv$hitrosti[[cesta]][n] + acc(odziv$hitrosti[[cesta]][n], 
                                                                                   input[[paste("hitrost",cesta,sep='')]]/3.6, 
-                                                                                  200)*dt)
+                                                                                  200)*dt*input$animacija)
                     }else{
                         # na koncu druga cesta
                         if(length(odziv$avti[[odziv$kam[[cesta]]]]) == 0){
                             # ce je naslednja cesta prazna
                             novehitrosti[n] = max(0, odziv$hitrosti[[cesta]][n] + acc(odziv$hitrosti[[cesta]][n], 
                                                                                       input[[paste("hitrost",cesta,sep='')]]/3.6, 
-                                                                                      200)*dt)
+                                                                                      200)*dt*input$animacija)
                         }else{
                             # ce ne se prilagaja avtu na naslednji cesti
                             novehitrosti[n] = max(0, odziv$hitrosti[[cesta]][n] + acc(odziv$hitrosti[[cesta]][n], 
                                                                                       odziv$hitrosti[[odziv$kam[[cesta]]]][1], 
-                                                                                      dolzine[[cesta]] - odziv$avti[[cesta]][n] + odziv$avti[[odziv$kam[[cesta]]]][1])*dt)
+                                                                                      dolzine[[cesta]] - odziv$avti[[cesta]][n] + odziv$avti[[odziv$kam[[cesta]]]][1])*dt*input$animacija)
                         }
                     }
                 }
@@ -281,6 +291,7 @@ server <- function(input, output) {
     premakni <- function(){
         
         # te spremenljivke potrebujemo za nove izracune
+        req(input$animacija)
         req(input$intenzivnostab)
         req(input$hitrostab)
         req(input$hitrostbc)
@@ -296,12 +307,19 @@ server <- function(input, output) {
                 premaknicesto(c, FALSE)
             }
         }
+        i = 1
         for(c in names(ceste)){
             if(length(odziv$noviavti[[c]]) == 2){
                 odziv$avti[[c]] = c(odziv$noviavti[[c]][1], odziv$avti[[c]])
                 odziv$hitrosti[[c]] = c(odziv$noviavti[[c]][2], odziv$hitrosti[[c]])
                 odziv$noviavti[[c]] = c()
             }
+            if(length(odziv$hitrosti[[c]])>0){
+                odziv$povprecnehit[i] = mean(odziv$hitrosti[[c]])*3.6
+            }else{
+                odziv$povprecnehit[i] = input[[paste("hitrost", c, sep='')]]
+            }
+            i = i+1
         }
     }
     
@@ -362,6 +380,8 @@ server <- function(input, output) {
         }
         legend(0, 1000, legend = names(ceste), col = barve, lty=1, cex=1)
     })
+    
+    output$povphit <- renderTable(matrix(odziv$povprecnehit, ncol = 1, dimnames = list(names(ceste),c("v (km/h)"))), rownames = TRUE)
 }
 
 # Run the application 
