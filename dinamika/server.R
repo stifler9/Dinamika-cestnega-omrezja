@@ -5,16 +5,16 @@ server <- function(input, output) {
   
   # konstantni podatki o cestah, povezanosti, prehodnosti
   #
-  zacetki = c("ab")
   dolzine = NULL
   dolzine$"ab" = 1000
   dolzine$"bc" = 700
   dolzine$"bd" = 800
   
   ceste = NULL
-  ceste$"ab" = c("a", "b", 'blue')
-  ceste$"bc" = c("b", "c", 'red')
-  ceste$"bd" = c("b", "d", 'green4')
+  ceste$"ab" = c("a", "b", 'blue', TRUE)
+  ceste$"bc" = c("b", "c", 'red', FALSE)
+  ceste$"bd" = c("b", "d", 'green4', FALSE)
+  # ceste[[c]][4] == TRUE, ce je cesta zacetna
   povezave = NULL
   povezave$"ab" = c("bc","bd")
   prehodne = NULL
@@ -221,11 +221,7 @@ server <- function(input, output) {
     odziv$resetind <- 1
     
     for(c in names(ceste)){
-      if(c %in% zacetki){
-        premaknicesto(c, TRUE)
-      }else{
-        premaknicesto(c, FALSE)
-      }
+      premaknicesto(c, ceste[[c]][4])
     }
     i = 1
     for(c in names(ceste)){
