@@ -31,8 +31,7 @@ server <- function(input, output) {
   koor$"d"$y = 900
   
   lambda = 3 #prilagajalni faktor
-  avto = 5 #m (dolzina avta)
-  varnost = 5 #m (koliko prej se zeli ustaviti)
+  avto = 7 #m (dolzina avta)
   bremza = -10
   #m/s^2
   maxposp = 10
@@ -97,12 +96,12 @@ server <- function(input, output) {
     
     # funkcija pospeska
     acc = function(v1, v2, gap){
-      if((v1^2/(2*bremza)) > (v2^2/(2*bremza)) + gap - avto - varnost){
+      if((v1^2/(2*bremza)) > (v2^2/(2*bremza)) + gap - avto){
         # Ce velja neenakost, potem se avto zadaj ne bo mogel ustaviti
         # na varnostni razdalji, ce bo avto pred njim zabremzal.
         return(bremza)
       }
-      if(gap > 4*v1){
+      if(gap - avto > 4*v1){
         rez = lambda*((input[[paste("hitrost",cesta,sep='')]]/3.6) - v1)
       }else{
         rez = lambda*(v2 - v1)
@@ -299,6 +298,50 @@ server <- function(input, output) {
         x = (odziv$avti[[c]]/dolzine[[c]])*(koor[[ceste[[c]][2]]]$x - koor[[ceste[[c]][1]]]$x) + koor[[ceste[[c]][1]]]$x
         y = (odziv$avti[[c]]/dolzine[[c]])*(koor[[ceste[[c]][2]]]$y - koor[[ceste[[c]][1]]]$y) + koor[[ceste[[c]][1]]]$y
         points(x, y, col = ceste[[c]][3])
+      }
+      barve = c(barve, ceste[[c]][3])
+      i = i+1
+    }
+    legend(0, 1000, legend = names(ceste), col = barve, lty=1, cex=1)
+  })
+  
+  output$obremenitev <- renderPlot({
+    plot(c(0,1000, 1000, 0, 0), c(0,0, 1000, 1000, 0), type = 'l', xlim = c(0, 1000), ylim = c(0,1000), xlab = 'x', ylab = 'y')
+    barve = c()
+    i = 1
+    for (c in names(ceste)) {
+      #pogledamo odseke po 100 m
+      odsekov = (dolzine[[c]]/100)
+      avtov = vector(length = odsekov)
+      obrbarve = c()
+      for(a in odziv$avti[[c]]){
+        kje = 1
+        while (kje*100 < a) {
+          kje = kje + 1
+        }
+        avtov[kje] = avtov[kje] + 1
+      }
+      for(j in 1:odsekov){
+        #izracunamo hitrost s katero bi se dalo peljati po odseku
+        # s hitrostjo v_1 se da peljati na varnostni razdalji 4*v_1 + avto
+        # (razdalja - avto)/4 je hitrost
+        if(avtov[j] > 1){
+          hit = ((100/(avtov[j]-1))-avto)/4
+          obr = hit/input[[paste("hitrost",c, sep = '')]]
+          if(obr > 1/2){
+            obrbarve = c(obrbarve,rgb(min(1,max(0,(1-obr)*2)), 1, 0, 1))
+          }else{
+            obrbarve = c(obrbarve,rgb(1, min(1,max(0,2*obr)), 0, 1))
+          }
+        }
+        else{
+          obrbarve = c(obrbarve, rgb(0,1,0,1))
+        }
+      }
+      x = (seq(0,1,by=(1/odsekov)))*(koor[[ceste[[c]][2]]]$x - koor[[ceste[[c]][1]]]$x) + koor[[ceste[[c]][1]]]$x
+      y = (seq(0,1,by=(1/odsekov)))*(koor[[ceste[[c]][2]]]$y - koor[[ceste[[c]][1]]]$y) + koor[[ceste[[c]][1]]]$y
+      for (o in 1:odsekov) {
+        lines(c(x[o], x[o+1]),c(y[o],y[o+1]), col = obrbarve[o], lwd=2)
       }
       barve = c(barve, ceste[[c]][3])
       i = i+1

@@ -66,6 +66,7 @@ fluidPage(
     mainPanel(
       tabsetPanel(
         tabPanel("Avti", plotOutput("omrezje", height = '800px')),
+        tabPanel("Obremenitve", plotOutput("obremenitev", height = '800px')),
         tabPanel("Povprecne hitrosti", tableOutput('povphit'))
       )
     )
