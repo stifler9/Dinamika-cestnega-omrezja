@@ -9,8 +9,6 @@ fluidPage(
   sidebarLayout(
     sidebarPanel(
       fluidRow(
-        column(5,numericInput("skipnum", "Korakov:", 1)),
-        column(7,actionButton("skip","Next")),
         column(7,uiOutput("resetbutton"))
       ),
       fluidRow(

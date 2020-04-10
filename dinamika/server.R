@@ -189,7 +189,7 @@ server <- function(input, output) {
       }
     }
     if(zacetna){
-      if(rbern(1, dt*input[[paste("intenzivnost", cesta, sep = '')]])){
+      if(rbern(1, dt*input$animacija*input[[paste("intenzivnost", cesta, sep = '')]])){
         # ce se na zacetku pojavi nov avto
         odziv$avti[[cesta]] = c(0.0, noviavti)
         odziv$hitrosti[[cesta]] = c(runif(1, 
@@ -238,14 +238,8 @@ server <- function(input, output) {
     }
   }
   
-  # sprozilci
-  observeEvent(input$skip, {
-    req(input$skipnum)
-    for(i in 1:input$skipnum){
-      premakni()
-    }
-  })
   
+  # sprozilci
   observeEvent(input$semaforAbBc,{
     if(length(odziv$semaforji$abbc)>0){
       odziv$semaforji$abbc = c()
@@ -312,7 +306,6 @@ server <- function(input, output) {
   output$obremenitev <- renderPlot({
     plot(c(0,1000, 1000, 0, 0), c(0,0, 1000, 1000, 0), type = 'l', xlim = c(0, 1000), ylim = c(0,1000), xlab = 'x', ylab = 'y')
     barve = c()
-    i = 1
     for (c in names(ceste)) {
       #pogledamo odseke po 100 m
       odsekov = (dolzine[[c]]/100)
@@ -336,7 +329,7 @@ server <- function(input, output) {
         obrbarva = ""
         if(avtov[j] > 1){
           r = 1/20
-          hit = -bremza*(-r + sqrt(r*r - 2*(((100/(avtov[j]))-avto)/bremza)))
+          hit = -bremza*(-r + sqrt(max(0,r*r - 2*(((100/(avtov[j]))-avto)/bremza))))
           obr = hit/input[[paste("hitrost",c, sep = '')]]
           #barva glede na obremenitev
           if(obr > 1/2){
@@ -351,7 +344,6 @@ server <- function(input, output) {
         lines(c(x[j], x[j+1]),c(y[j],y[j+1]), col = obrbarva, lwd=2)
       }
       barve = c(barve, ceste[[c]][3])
-      i = i+1
     }
     legend(0, 1000, legend = names(ceste), col = barve, lty=1, cex=1)
   })
