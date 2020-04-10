@@ -101,7 +101,7 @@ server <- function(input, output) {
         # na varnostni razdalji, ce bo avto pred njim zabremzal.
         return(bremza)
       }
-      if(gap - avto > 4*v1){
+      if(gap - avto > 3*v1){
         rez = lambda*((input[[paste("hitrost",cesta,sep='')]]/3.6) - v1)
       }else{
         rez = lambda*(v2 - v1)
@@ -281,12 +281,14 @@ server <- function(input, output) {
   })
   
   # izrisemo trenutno stanje avtov
+  #
   output$omrezje <- renderPlot({
     plot(c(0,1000, 1000, 0, 0), c(0,0, 1000, 1000, 0), type = 'l', xlim = c(0, 1000), ylim = c(0,1000), xlab = 'x', ylab = 'y')
     barve = c()
     i = 1
     for (c in names(ceste)) {
       obr = odziv$povprecnehit[i]/input[[paste("hitrost", c, sep='')]]
+      # barva glede na obremenitev, zelena-rumena-rdeca
       obrbarva = ""
       if(obr > 1/2){
         obrbarva = rgb(min(1,max(0,(1-obr)*2)), 1, 0, 1)
@@ -305,6 +307,8 @@ server <- function(input, output) {
     legend(0, 1000, legend = names(ceste), col = barve, lty=1, cex=1)
   })
   
+  # izrisemo cestne obremenitve
+  #
   output$obremenitev <- renderPlot({
     plot(c(0,1000, 1000, 0, 0), c(0,0, 1000, 1000, 0), type = 'l', xlim = c(0, 1000), ylim = c(0,1000), xlab = 'x', ylab = 'y')
     barve = c()
@@ -314,40 +318,41 @@ server <- function(input, output) {
       odsekov = (dolzine[[c]]/100)
       avtov = vector(length = odsekov)
       obrbarve = c()
+      kje = 1
       for(a in odziv$avti[[c]]){
-        kje = 1
         while (kje*100 < a) {
           kje = kje + 1
         }
         avtov[kje] = avtov[kje] + 1
       }
+      x = (seq(0,1,by=(1/odsekov)))*(koor[[ceste[[c]][2]]]$x - koor[[ceste[[c]][1]]]$x) + koor[[ceste[[c]][1]]]$x
+      y = (seq(0,1,by=(1/odsekov)))*(koor[[ceste[[c]][2]]]$y - koor[[ceste[[c]][1]]]$y) + koor[[ceste[[c]][1]]]$y
       for(j in 1:odsekov){
         #izracunamo hitrost s katero bi se dalo peljati po odseku
-        # s hitrostjo v_1 se da peljati na varnostni razdalji 4*v_1 + avto
-        # (razdalja - avto)/4 je hitrost
+        # s hitrostjo v_1 se da peljati na varnostni razdalji avto + r*v_1 + v_1^2/(2*bremza)
+        # kjer je r reakcijski cas, va tem primeru 1/20s. Obrnemo enacbo da dabimo hitrost hit
+        # razdalja je ocenjena glede na stevilo avtomobilov
+        # 
+        obrbarva = ""
         if(avtov[j] > 1){
-          hit = ((100/(avtov[j]-1))-avto)/4
+          r = 1/20
+          hit = -bremza*(-r + sqrt(r*r - 2*(((100/(avtov[j]))-avto)/bremza)))
           obr = hit/input[[paste("hitrost",c, sep = '')]]
+          #barva glede na obremenitev
           if(obr > 1/2){
-            obrbarve = c(obrbarve,rgb(min(1,max(0,(1-obr)*2)), 1, 0, 1))
+            obrbarva = rgb(min(1,max(0,(1-obr)*2)), 1, 0, 1)
           }else{
-            obrbarve = c(obrbarve,rgb(1, min(1,max(0,2*obr)), 0, 1))
+            obrbarva = rgb(1, min(1,max(0,2*obr)), 0, 1)
           }
         }
         else{
-          obrbarve = c(obrbarve, rgb(0,1,0,1))
+          obrbarva = rgb(0,1,0,1)
         }
-      }
-      x = (seq(0,1,by=(1/odsekov)))*(koor[[ceste[[c]][2]]]$x - koor[[ceste[[c]][1]]]$x) + koor[[ceste[[c]][1]]]$x
-      y = (seq(0,1,by=(1/odsekov)))*(koor[[ceste[[c]][2]]]$y - koor[[ceste[[c]][1]]]$y) + koor[[ceste[[c]][1]]]$y
-      for (o in 1:odsekov) {
-        lines(c(x[o], x[o+1]),c(y[o],y[o+1]), col = obrbarve[o], lwd=2)
+        lines(c(x[j], x[j+1]),c(y[j],y[j+1]), col = obrbarva, lwd=2)
       }
       barve = c(barve, ceste[[c]][3])
       i = i+1
     }
     legend(0, 1000, legend = names(ceste), col = barve, lty=1, cex=1)
   })
-  
-  output$povphit <- renderTable(matrix(odziv$povprecnehit, ncol = 1, dimnames = list(names(ceste),c("v (km/h)"))), rownames = TRUE)
 }
