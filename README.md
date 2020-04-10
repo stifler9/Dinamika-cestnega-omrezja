@@ -11,7 +11,7 @@ kjer je lambda pozitiven faktor prilagajanja hitrosti, v_2 je hitrost vozila pre
 Zraven postavimo omejitev pojemka, saj avto ne more zabremzati z neomejenim pojemkom. Temu dodamo se upostevanje varnostne razdalje. Ce voznik opazi, da se ne bo mogel ustaviti na varni razdalji v primeru, da vozilo pred njim maksimalno zabremza, potem le-ta maksimalno zabremza do varne razdalje.
 
 ### Zagon:
-Postavljena Shiny aplikacija (datoteka **dinamika/app.R** za zagon). Ta nam dopusca:
+Postavljena Shiny aplikacija (datoteka **dinamika/server.R** za zagon). Ta nam dopusca:
 - da resetiramo stanje na zacetno stanje hitrosti in avtomobilov,
 - da dolocimo stevilo korakov in z gumbom Next naredimo toliko korakov,
 - da spreminjamo rdeco in zelono luc na semaforju,

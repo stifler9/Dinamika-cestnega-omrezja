@@ -1,3 +1,4 @@
+# datoteka za drugacno vizualizacijo premikanja avtomobilov po eni cesti
 library(Rlab)
 
 dolzina = 1000 #m
@@ -21,12 +22,15 @@ bremza = -10
 #m/s^2
 maxposp = 10
 #maksimalni pospesek
+nov_na_sek = 0.3
 
-acc = function(kje1, v1, kje2, v2){
-  if((v1^2/(2*bremza)) > (v2^2/(2*bremza)) + (kje2 - kje1) - avto - varnost){
+acc = function(v1, v2, gap){
+  if((v1^2/(2*bremza)) > (v2^2/(2*bremza)) + gap - avto - varnost){
+    # Ce velja neenakost, potem se avto zadaj ne bo mogel ustaviti
+    # na varnostni razdalji, ce bo avto pred njim zabremzal.
     return(bremza)
   }
-  if(kje2 - kje1 > 50){
+  if(gap > 4*v1){
     rez = lambda*(koncna - v1)
   }else{
     rez = lambda*(v2 - v1)
@@ -41,7 +45,7 @@ premakni = function(avti, hitrosti, dt, rdeca){
   i = 1
   while(i < n){
     noviavti[i] = avti[i] + hitrosti[i]*dt
-    novehitrosti[i] = max(hitrosti[i] + acc(avti[i], hitrosti[i], avti[i+1], hitrosti[i+1])*dt, 0)
+    novehitrosti[i] = max(hitrosti[i] + acc(hitrosti[i], hitrosti[i+1], avti[i+1] - avti[i])*dt, 0)
     i = i+1
   }
   noviavti[n] = avti[n] + hitrosti[n]*dt
@@ -50,12 +54,16 @@ premakni = function(avti, hitrosti, dt, rdeca){
     n = n-1
     noviavti = noviavti[1:n]
     novehitrosti = novehitrosti[1:n]
+    if(n == 0){
+      noviavti = c()
+      novehitrosti = c()
+    }
   }else{
     if(rdeca){
       # ce je na koncu rdeca luc
-      novehitrosti[n] = max(0, hitrosti[n] + acc(avti[n], hitrosti[n], dolzina, 0)*dt)
+      novehitrosti[n] = max(0, hitrosti[n] + acc(hitrosti[n], 0, dolzina - avti[n])*dt)
     }else{
-      novehitrosti[n] = max(0, hitrosti[n] + acc(avti[n], hitrosti[n], dolzina + 100, koncna)*dt)
+      novehitrosti[n] = max(0, hitrosti[n] + acc(hitrosti[n], koncna, dolzina + 100 - avti[n])*dt)
     }
   }
   if(rbern(1, dt*nov_na_sek)){
@@ -72,6 +80,7 @@ premakni = function(avti, hitrosti, dt, rdeca){
 
 interval = 1/50 #s
 sekund = 60
+semafor = c(0, 1500)
 
 vsiavti = numeric()
 casi = numeric()
@@ -97,4 +106,4 @@ for(x in 1:steps){
   i = i + n
 }
 
-#plot(vsiavti, casi, type = 'p', xlim = c(0, dolzina), ylim = c(0, steps), cex = 0.01)
+plot(vsiavti, casi, type = 'p', xlim = c(0, dolzina), ylim = c(0, steps), cex = 0.01)
