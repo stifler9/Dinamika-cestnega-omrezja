@@ -175,11 +175,11 @@ server <- function(input, output) {
         if(length(odziv$semaforji[[paste(cesta, odziv$kam[[cesta]], sep='')]]) > 0){
           # ce je na koncu rdeca luc
           novehitrosti[n] = max(0, odziv$hitrosti[[cesta]][n] + acc(odziv$hitrosti[[cesta]][n], 
-                                                                    0, 
+                                                                    0.0, 
                                                                     dolzine[[cesta]] - odziv$avti[[cesta]][n])*dt*input$animacija)
         }else{
           if(length(povezave[[cesta]]) == 0){
-            #ce ni naprej ceste
+            #ce naprej ni ceste
             novehitrosti[n] = max(0, odziv$hitrosti[[cesta]][n] + acc(odziv$hitrosti[[cesta]][n], 
                                                                       input[[paste("hitrost",cesta,sep='')]]/3.6, 
                                                                       200)*dt*input$animacija)
@@ -310,12 +310,12 @@ server <- function(input, output) {
       if(length(odziv$avti[[c]]) > 0){
         x = (odziv$avti[[c]]/dolzine[[c]])*(koor[[ceste[[c]][2]]]$x - koor[[ceste[[c]][1]]]$x) + koor[[ceste[[c]][1]]]$x
         y = (odziv$avti[[c]]/dolzine[[c]])*(koor[[ceste[[c]][2]]]$y - koor[[ceste[[c]][1]]]$y) + koor[[ceste[[c]][1]]]$y
-        points(x, y, col = ceste[[c]][3])
+        points(x, y, col = ceste[[c]][3], pch = 19)
       }
       barve = c(barve, ceste[[c]][3])
       i = i+1
     }
-    legend(0, 1000, legend = names(ceste), col = barve, lty=1, cex=1)
+    legend(0, 1000, legend = names(ceste), col = barve, lty=1, pch = 19)
   })
   
   # izrisemo cestne obremenitve
@@ -327,7 +327,6 @@ server <- function(input, output) {
       #pogledamo odseke po 100 m
       odsekov = (dolzine[[c]]/100)
       avtov = vector(length = odsekov)
-      obrbarve = c()
       kje = 1
       for(a in odziv$avti[[c]]){
         while (kje*100 < a) {
@@ -335,8 +334,10 @@ server <- function(input, output) {
         }
         avtov[kje] = avtov[kje] + 1
       }
-      x = (seq(0,1,by=(1/odsekov)))*(koor[[ceste[[c]][2]]]$x - koor[[ceste[[c]][1]]]$x) + koor[[ceste[[c]][1]]]$x
-      y = (seq(0,1,by=(1/odsekov)))*(koor[[ceste[[c]][2]]]$y - koor[[ceste[[c]][1]]]$y) + koor[[ceste[[c]][1]]]$y
+      x = koor[[ceste[[c]][1]]]$x
+      y = koor[[ceste[[c]][1]]]$y
+      dx = (koor[[ceste[[c]][2]]]$x - koor[[ceste[[c]][1]]]$x)/odsekov
+      dy = (koor[[ceste[[c]][2]]]$y - koor[[ceste[[c]][1]]]$y)/odsekov
       for(j in 1:odsekov){
         #izracunamo hitrost s katero bi se dalo peljati po odseku
         # s hitrostjo v_1 se da peljati na varnostni razdalji avto + r*v_1 + v_1^2/(2*bremza)
@@ -356,12 +357,17 @@ server <- function(input, output) {
           }
         }
         else{
+          # ce je nejvec 1 avto na odseku, ni obremenjen
           obrbarva = rgb(0,1,0,1)
         }
-        lines(c(x[j], x[j+1]),c(y[j],y[j+1]), col = obrbarva, lwd=2)
+        x_nas = x + dx
+        y_nas = y + dy
+        lines(c(x, x_nas),c(y,y_nas), col = obrbarva, lwd=2)
+        x = x_nas
+        y = y_nas
       }
       barve = c(barve, ceste[[c]][3])
     }
-    legend(0, 1000, legend = names(ceste), col = barve, lty=1, cex=1)
+    legend(0, 1000, legend = names(ceste), col = barve, lty=1, pch = 19)
   })
 }
