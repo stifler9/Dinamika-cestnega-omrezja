@@ -7,28 +7,38 @@ server <- function(input, output) {
   #
   dolzine = NULL
   dolzine$"ab" = 1000
+  dolzine$"ad" = 900
   dolzine$"bc" = 700
   dolzine$"bd" = 800
+  dolzine$"dc" = 700
   
   ceste = NULL
   ceste$"ab" = c("a", "b", 'blue', TRUE)
+  ceste$"ad" = c("a", "d", 'gold3', TRUE)
   ceste$"bc" = c("b", "c", 'red', FALSE)
   ceste$"bd" = c("b", "d", 'green4', FALSE)
+  ceste$"dc" = c("d", "c", 'purple', FALSE)
   # ceste[[c]][4] == TRUE, ce je cesta zacetna
   povezave = NULL
   povezave$"ab" = c("bc","bd")
+  povezave$"bd" = c("dc")
+  povezave$"ad" = c("dc")
   prehodne = NULL
   prehodne$"ab" = c(1/3,2/3)
+  prehodne$"bd" = c(1)
+  prehodne$"ad" = c(1)
+  #spremeni odziv$kam
   
   koor = NULL
   koor$"a"$x = 0
   koor$"a"$y = 500
   koor$"b"$x = 600
-  koor$"b"$y = 200
+  koor$"b"$y = 1000
   koor$"c"$x = 1000
   koor$"c"$y = 600
-  koor$"d"$x = 700
-  koor$"d"$y = 900
+  koor$"d"$x = 600
+  koor$"d"$y = 50
+  ##
   
   lambda = 3 #prilagajalni faktor
   avto = 7 #m (dolzina avta)
@@ -65,9 +75,11 @@ server <- function(input, output) {
   odziv$hitrosti <- list(ab = c(13, 17, 17, 18, 16, 15, 15, 14, 14),
                          bc = c()) #m/s
   #semaforji, "iz kje" + "kam", ce je list prazen je zelena
-  odziv$semaforji <- list(abbc = c(TRUE))
+  odziv$semaforji <- list(addc = c(TRUE))
   #kam gre naslednji avto
-  odziv$kam = list(ab = zrebaj("ab"))
+  odziv$kam = list(ab = zrebaj("ab"),
+                   ad = zrebaj("ad"),
+                   bd = zrebaj("bd"))
   #za shranjevanje avtov ki so prisli na novo cesto
   odziv$noviavti = list(bc = c(), bd = c())
   #izpisujemo povprecne hitrosti na cestah
@@ -82,13 +94,13 @@ server <- function(input, output) {
     actionButton("reset",label=lbl)
   })
   
-  output$semaforabbc<-renderUI({
-    if(length(odziv$semaforji$abbc)>0){
-      lbl<-"Rdeca"
+  output$semaforadbd<-renderUI({
+    if(length(odziv$semaforji$addc)>0){
+      lbl<-"Zelena (bd->dc)"
     }else{
-      lbl<-"Zelena"
+      lbl<-"Zelena (ad->dc)"
     }
-    actionButton("semaforAbBc",label=lbl)
+    actionButton("semaforAdBd",label=lbl)
   })
   
   # funkcija premika avtomobilov na cesti pri spremembi casa dt
@@ -212,9 +224,12 @@ server <- function(input, output) {
     # te spremenljivke potrebujemo za nove izracune
     req(input$animacija)
     req(input$intenzivnostab)
+    req(input$intenzivnostad)
     req(input$hitrostab)
+    req(input$hitrostad)
     req(input$hitrostbc)
     req(input$hitrostbd)
+    req(input$hitrostdc)
     
     # indikator se spremeni na Reset
     odziv$resetind <- 1
@@ -240,11 +255,13 @@ server <- function(input, output) {
   
   
   # sprozilci
-  observeEvent(input$semaforAbBc,{
-    if(length(odziv$semaforji$abbc)>0){
-      odziv$semaforji$abbc = c()
+  observeEvent(input$semaforAdBd,{
+    if(length(odziv$semaforji$addc)>0){
+      odziv$semaforji$addc = c()
+      odziv$semaforji$bddc = c(TRUE)
     }else{
-      odziv$semaforji$abbc = c(TRUE)
+      odziv$semaforji$addc = c(TRUE)
+      odziv$semaforji$bddc = c()
     }
   })
   
@@ -265,19 +282,19 @@ server <- function(input, output) {
   
   observeEvent(input$reset,{
     odziv$resetind <- 0
-    odziv$avti <- list(ab = c(0.1, 0.15, 0.2, 0.5, 0.7, 0.8, 0.85, 0.88, 0.9)*dolzine$"ab",
-                       bc = c())
-    odziv$hitrosti <- list(ab = c(13, 17, 17, 18, 16, 15, 15, 14, 14),
-                           bc = c()) #m/s
+    odziv$avti <- list(ab = c(0.1, 0.15, 0.2, 0.5, 0.7, 0.8, 0.85, 0.88, 0.9)*dolzine$"ab", bc = c())
+    odziv$hitrosti <- list(ab = c(13, 17, 17, 18, 16, 15, 15, 14, 14), bc = c())
     odziv$semaforji <- list(abbc = c(TRUE))
-    odziv$kam = list(ab = zrebaj("ab"))
+    odziv$kam = list(ab = zrebaj("ab"),
+                     ad = zrebaj("ad"),
+                     bd = zrebaj("bd"))
     odziv$noviavti = list(bc = c(), bd = c())
   })
   
   # izrisemo trenutno stanje avtov
   #
   output$omrezje <- renderPlot({
-    plot(c(0,1000, 1000, 0, 0), c(0,0, 1000, 1000, 0), type = 'l', xlim = c(0, 1000), ylim = c(0,1000), xlab = 'x', ylab = 'y')
+    plot(c(0,10), c(1000, 1000), type = 'l', xlim = c(0, 1000), ylim = c(0,1000), xlab = 'x', ylab = 'y')
     barve = c()
     i = 1
     for (c in names(ceste)) {
@@ -304,7 +321,7 @@ server <- function(input, output) {
   # izrisemo cestne obremenitve
   #
   output$obremenitev <- renderPlot({
-    plot(c(0,1000, 1000, 0, 0), c(0,0, 1000, 1000, 0), type = 'l', xlim = c(0, 1000), ylim = c(0,1000), xlab = 'x', ylab = 'y')
+    plot(c(0,10), c(1000, 1000), type = 'l', xlim = c(0, 1000), ylim = c(0,1000), xlab = 'x', ylab = 'y')
     barve = c()
     for (c in names(ceste)) {
       #pogledamo odseke po 100 m
@@ -328,7 +345,7 @@ server <- function(input, output) {
         # 
         obrbarva = ""
         if(avtov[j] > 1){
-          r = 1/20
+          r = dt*input$animacija
           hit = -bremza*(-r + sqrt(max(0,r*r - 2*(((100/(avtov[j]))-avto)/bremza))))
           obr = hit/input[[paste("hitrost",c, sep = '')]]
           #barva glede na obremenitev
