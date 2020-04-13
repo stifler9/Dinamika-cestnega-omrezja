@@ -19,14 +19,11 @@ server <- function(input, output) {
   ceste$"bd" = c("b", "d", 'green4', FALSE)
   ceste$"dc" = c("d", "c", 'purple', FALSE)
   # ceste[[c]][4] == TRUE, ce je cesta zacetna
+  
   povezave = NULL
   povezave$"ab" = c("bc","bd")
   povezave$"bd" = c("dc")
   povezave$"ad" = c("dc")
-  prehodne = NULL
-  prehodne$"ab" = c(1/3,2/3)
-  prehodne$"bd" = c(1)
-  prehodne$"ad" = c(1)
   #spremeni odziv$kam
   
   koor = NULL
@@ -42,30 +39,11 @@ server <- function(input, output) {
   
   lambda = 3 #prilagajalni faktor
   avto = 7 #m (dolzina avta)
-  bremza = -10
-  #m/s^2
+  #maksimalni pospesek/pojemek
+  bremza = -10 #m/s^2
   maxposp = 10
-  #maksimalni pospesek
-  dt = 1/20
   #sprememba casa
-  
-  # funkcija ki zreba na katero cesto zeli avto, ki pride do konca,
-  # glede na prehodno verjetnost
-  zrebaj <- function(cesta){
-    i = 1
-    n = length(prehodne[[cesta]])
-    if(n > 1){
-      u = runif(1)
-      while(i < n){
-        u = u - prehodne[[cesta]][i]
-        if(u <= 0.0){
-          break
-        }
-        i = i+1
-      }
-    }
-    return(povezave[[cesta]][i])
-  }
+  dt = 1/20
   
   #parametri ki se spreminjajo
   odziv <- reactiveValues()
@@ -77,9 +55,9 @@ server <- function(input, output) {
   #semaforji, "iz kje" + "kam", ce je list prazen je zelena
   odziv$semaforji <- list(addc = c(TRUE))
   #kam gre naslednji avto
-  odziv$kam = list(ab = zrebaj("ab"),
-                   ad = zrebaj("ad"),
-                   bd = zrebaj("bd"))
+  odziv$kam = list(ab = povezave$"ab"[1],
+                   ad = povezave$"ad"[1],
+                   bd = povezave$"bd"[1])
   #za shranjevanje avtov ki so prisli na novo cesto
   odziv$noviavti = list(bc = c(), bd = c())
   #izpisujemo povprecne hitrosti na cestah
@@ -169,7 +147,19 @@ server <- function(input, output) {
                                                                                                odziv$hitrosti[[odziv$kam[[cesta]]]][1],
                                                                                                dolzine[[cesta]] - odziv$avti[[cesta]][n+1] + odziv$avti[[odziv$kam[[cesta]]]][1])*dt*input$animacija))
           }
-          odziv$kam[[cesta]] = zrebaj(cesta)
+          # zrebamo kam gre naslednji
+          p = length(povezave[[cesta]])
+          if(p > 1){
+            ci = 1
+            u = runif(1)
+            while(ci < p){
+              if(input[[paste("prehodna", cesta, sep='')]][ci] > u){
+                break
+              }
+              ci = ci + 1
+            }
+            odziv$kam[[cesta]] = povezave[[cesta]][ci]
+          }
         }
       }else{
         if(length(odziv$semaforji[[paste(cesta, odziv$kam[[cesta]], sep='')]]) > 0){
@@ -230,6 +220,7 @@ server <- function(input, output) {
     req(input$hitrostbc)
     req(input$hitrostbd)
     req(input$hitrostdc)
+    req(input$prehodnaab)
     
     # indikator se spremeni na Reset
     odziv$resetind <- 1
@@ -285,9 +276,9 @@ server <- function(input, output) {
     odziv$avti <- list(ab = c(0.1, 0.15, 0.2, 0.5, 0.7, 0.8, 0.85, 0.88, 0.9)*dolzine$"ab", bc = c())
     odziv$hitrosti <- list(ab = c(13, 17, 17, 18, 16, 15, 15, 14, 14), bc = c())
     odziv$semaforji <- list(abbc = c(TRUE))
-    odziv$kam = list(ab = zrebaj("ab"),
-                     ad = zrebaj("ad"),
-                     bd = zrebaj("bd"))
+    odziv$kam = list(ab = povezave$"ab"[1],
+                     ad = povezave$"ad"[1],
+                     bd = povezave$"bd"[1])
     odziv$noviavti = list(bc = c(), bd = c())
   })
   
