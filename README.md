@@ -12,10 +12,9 @@ Zraven postavimo omejitev pojemka, saj avto ne more zabremzati z neomejenim poje
 
 ### Zagon:
 Postavljena Shiny aplikacija (datoteka **dinamika/server.R** za zagon). Ta nam dopusca:
-- da resetiramo stanje na zacetno stanje hitrosti in avtomobilov,
-- da dolocimo stevilo korakov in z gumbom Next naredimo toliko korakov,
+- da dolocamo prehodno verjetnost avtomobilov
 - da spreminjamo rdeco in zelono luc na semaforju,
 - da dolocamo koliko novih avtomobilov v povprecju prihaja na sekundo,
 - da dolocimo omejitev hitrosti,
-- da pozenemo ali ustavimo model,
+- da pozenemo ali ustavimo model, resetiramo
 - da pospesimo cas.

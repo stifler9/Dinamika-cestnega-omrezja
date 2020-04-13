@@ -3,14 +3,22 @@ library(shiny)
 
 fluidPage(
   
+  tags$style(HTML(".js-irs-0 .irs-single, .js-irs-0 .irs-bar-edge, .js-irs-0 .irs-bar {background: green}")),
+  tags$style(HTML(".js-irs-3 .irs-single, .js-irs-3 .irs-bar-edge, .js-irs-3 .irs-bar {background: orange}")),
+  tags$style(HTML(".js-irs-4 .irs-single, .js-irs-4 .irs-bar-edge, .js-irs-4 .irs-bar {background: orange}")),
+  tags$style(HTML(".js-irs-5 .irs-single, .js-irs-5 .irs-bar-edge, .js-irs-5 .irs-bar {background: orange}")),
+  tags$style(HTML(".js-irs-6 .irs-single, .js-irs-6 .irs-bar-edge, .js-irs-6 .irs-bar {background: orange}")),
+  tags$style(HTML(".js-irs-7 .irs-single, .js-irs-7 .irs-bar-edge, .js-irs-7 .irs-bar {background: orange}")),
+  tags$style(HTML(".js-irs-8 .irs-single, .js-irs-8 .irs-bar-edge, .js-irs-8 .irs-bar {background: purple}")),
+  
   # Application title
   titlePanel("Dinamika cestnega omrezja"),
   
   sidebarLayout(
     sidebarPanel(
       fluidRow(
-        column(4,h5("Semafor (ad/bd->dc):")),
-        uiOutput("semaforadbd")
+        column(6,h4("Semafor (ad/bd->dc):")),
+        column(5,uiOutput("semaforadbd"))
       ),
       fluidRow(h4("Prehodne verjetnosti:")),
       fluidRow(
@@ -97,7 +105,6 @@ fluidPage(
                              value = 1))
       )
     ),
-    
     mainPanel(
       tabsetPanel(
         tabPanel("Avti", plotOutput("omrezje", height = '800px')),
