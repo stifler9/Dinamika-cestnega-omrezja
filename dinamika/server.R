@@ -3,53 +3,17 @@ library(shiny)
 
 server <- function(input, output) {
   
-  # konstantni podatki o cestah, povezanosti, prehodnosti
-  #
-  dolzine = NULL
-  dolzine$"ab" = 1000
-  dolzine$"ad" = 900
-  dolzine$"bc" = 700
-  dolzine$"bd" = 800
-  dolzine$"dc" = 700
-  
-  ceste = NULL
-  ceste$"ab" = c("a", "b", 'blue', TRUE)
-  ceste$"ad" = c("a", "d", 'gold3', TRUE)
-  ceste$"bc" = c("b", "c", 'red', FALSE)
-  ceste$"bd" = c("b", "d", 'green4', FALSE)
-  ceste$"dc" = c("d", "c", 'purple', FALSE)
-  # ceste[[c]][4] == TRUE, ce je cesta zacetna
-  
-  povezave = NULL
-  povezave$"ab" = c("bc","bd")
-  povezave$"bd" = c("dc")
-  povezave$"ad" = c("dc")
-  #spremeni odziv$kam
-  
-  koor = NULL
-  koor$"a"$x = 0
-  koor$"a"$y = 500
-  koor$"b"$x = 600
-  koor$"b"$y = 1000
-  koor$"c"$x = 1000
-  koor$"c"$y = 600
-  koor$"d"$x = 600
-  koor$"d"$y = 50
-  ##
-  
-  lambda = 3 #prilagajalni faktor
-  avto = 7 #m (dolzina avta)
-  #maksimalni pospesek/pojemek
-  bremza = -10 #m/s^2
-  maxposp = 10
-  #sprememba casa
-  dt = 1/20
+  source("../podatki_ceste.r")
+  source("../vozniki.r")
   
   #parametri ki se spreminjajo
   odziv <- reactiveValues()
   odziv$resetind <- 0
-  odziv$avti <- list(ab = c(0.1, 0.15, 0.2, 0.5, 0.7, 0.8, 0.85, 0.88, 0.9)*dolzine$"ab",
-                     bc = c())
+  # for (c in names(ceste)) {
+  #   odziv[[paste('avti', c, sep='')]] = c(0.1, 0.15, 0.2, 0.5, 0.7, 0.8, 0.85, 0.88, 0.9)*dolzine[[c]]
+  # }
+  odziv$avti = list(ab = c(0.1, 0.15, 0.2, 0.5, 0.7, 0.8, 0.85, 0.88, 0.9)*dolzine$"ab")
+  
   odziv$hitrosti <- list(ab = c(13, 17, 17, 18, 16, 15, 15, 14, 14),
                          bc = c()) #m/s
   #semaforji, "iz kje" + "kam", ce je list prazen je zelena
