@@ -1,5 +1,6 @@
 library(Rlab)
 library(shiny)
+library(foreach)
 
 server <- function(input, output) {
   
@@ -62,13 +63,26 @@ server <- function(input, output) {
     novehitrosti = vector(length = n)
     avtonaprej = c()
     if(n > 0){
-      i = 1
-      while(i < n){
-        noviavti[i] = odziv$avti[[cesta]][i] + odziv$hitrosti[[cesta]][i]*dt*input$animacija
-        novehitrosti[i] = max(odziv$hitrosti[[cesta]][i] + acc(odziv$hitrosti[[cesta]][i], 
-                                                               odziv$hitrosti[[cesta]][i+1], 
-                                                               odziv$avti[[cesta]][i+1] - odziv$avti[[cesta]][i])*dt*input$animacija, 0)
-        i = i+1
+      if(n > 1){
+        novo = foreach(i = 1:(n-1), .combine = rbind, .export = c("isolate", "input", "odziv")) %dopar% {
+          rez = isolate({
+            c(odziv$avti[[cesta]][i] + odziv$hitrosti[[cesta]][i]*dt*input$animacija,
+                    max(odziv$hitrosti[[cesta]][i] + acc(odziv$hitrosti[[cesta]][i], 
+                                                         odziv$hitrosti[[cesta]][i+1], 
+                                                         odziv$avti[[cesta]][i+1] - odziv$avti[[cesta]][i])*dt*input$animacija, 0))
+          })
+        }
+        if(n == 2){
+          noviavti[1] = novo[1]
+          novehitrosti[1] = novo[2]
+        }else{
+          i = 1
+          while(i < n){
+            noviavti[i] = novo[i,1]
+            novehitrosti[i] = novo[i,2]
+            i = i+1
+          }
+        }
       }
       noviavti[n] = odziv$avti[[cesta]][n] + odziv$hitrosti[[cesta]][n]*dt*input$animacija
       if(noviavti[n] > dolzine[[cesta]]){
@@ -288,7 +302,7 @@ server <- function(input, output) {
       for(j in 1:odsekov){
         #izracunamo hitrost s katero bi se dalo peljati po odseku
         # s hitrostjo v_1 se da peljati na varnostni razdalji avto + r*v_1 + v_1^2/(2*bremza)
-        # kjer je r reakcijski cas, va tem primeru 1/20s. Obrnemo enacbo da dabimo hitrost hit
+        # kjer je r reakcijski cas, v tem primeru 1/20s. Obrnemo enacbo da dobimo hitrost hit
         # razdalja je ocenjena glede na stevilo avtomobilov
         # 
         obrbarva = ""

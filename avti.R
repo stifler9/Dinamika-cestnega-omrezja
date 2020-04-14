@@ -6,7 +6,6 @@ avti = c(0.1, 0.15, 0.2, 0.5, 0.7, 0.8, 0.85, 0.88, 0.9)*dolzina
 hitrosti = c(13, 17, 17, 18, 16, 15, 15, 14, 14) #m/s
 
 avto = 5 #m (dolzina avta)
-varnost = 2 #m (koliko prej se zeli ustaviti)
 koncna = 70/3.6
 
 #pospesek
@@ -25,12 +24,12 @@ maxposp = 10
 nov_na_sek = 0.3
 
 acc = function(v1, v2, gap){
-  if((v1^2/(2*bremza)) > (v2^2/(2*bremza)) + gap - avto - varnost){
+  if((v1^2/(2*bremza)) > (v2^2/(2*bremza)) + gap - avto){
     # Ce velja neenakost, potem se avto zadaj ne bo mogel ustaviti
     # na varnostni razdalji, ce bo avto pred njim zabremzal.
     return(bremza)
   }
-  if(gap > 4*v1){
+  if(gap - avto > 4*v1){
     rez = lambda*(koncna - v1)
   }else{
     rez = lambda*(v2 - v1)
