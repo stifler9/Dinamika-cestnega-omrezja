@@ -9,23 +9,17 @@ server <- function(input, output) {
   #parametri ki se spreminjajo
   odziv <- reactiveValues()
   odziv$resetind <- 0
-  # for (c in names(ceste)) {
-  #   odziv[[paste('avti', c, sep='')]] = c(0.1, 0.15, 0.2, 0.5, 0.7, 0.8, 0.85, 0.88, 0.9)*dolzine[[c]]
-  # }
   odziv$avti = list(ab = c(0.1, 0.15, 0.2, 0.5, 0.7, 0.8, 0.85, 0.88, 0.9)*dolzine$"ab")
-  
   odziv$hitrosti <- list(ab = c(13, 17, 17, 18, 16, 15, 15, 14, 14),
                          bc = c()) #m/s
-  #semaforji, "iz kje" + "kam", ce je list prazen je zelena
+  # semaforji, "iz kje" + "kam", ce je list prazen je zelena
   odziv$semaforji <- list(addc = c(TRUE))
-  #kam gre naslednji avto
+  # kam gre naslednji avto
   odziv$kam = list(ab = povezave$"ab"[1],
                    ad = povezave$"ad"[1],
                    bd = povezave$"bd"[1])
-  #za shranjevanje avtov ki so prisli na novo cesto
+  # za shranjevanje avtov ki so prisli na novo cesto
   odziv$noviavti = list(bc = c(), bd = c())
-  #izpisujemo povprecne hitrosti na cestah
-  odziv$povprecnehit = rep(0,length(names(ceste)))
   
   output$resetbutton<-renderUI({
     if(odziv$resetind==0){
@@ -199,11 +193,6 @@ server <- function(input, output) {
         odziv$hitrosti[[c]] = c(odziv$noviavti[[c]][2], odziv$hitrosti[[c]])
         odziv$noviavti[[c]] = c()
       }
-      if(length(odziv$hitrosti[[c]])>0){
-        odziv$povprecnehit[i] = mean(odziv$hitrosti[[c]])*3.6
-      }else{
-        odziv$povprecnehit[i] = input[[paste("hitrost", c, sep='')]]
-      }
       i = i+1
     }
   }
@@ -253,8 +242,11 @@ server <- function(input, output) {
     barve = c()
     i = 1
     for (c in names(ceste)) {
-      obr = odziv$povprecnehit[i]/input[[paste("hitrost", c, sep='')]]
       # barva glede na obremenitev, zelena-rumena-rdeca
+      obr = 1
+      if(length(odziv$hitrosti[[c]]) > 0){
+        obr = mean(odziv$hitrosti[[c]])*3.6/input[[paste("hitrost", c, sep='')]]
+      }
       obrbarva = ""
       if(obr > 1/2){
         obrbarva = rgb(min(1,max(0,(1-obr)*2)), 1, 0, 1)
