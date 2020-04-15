@@ -10,14 +10,14 @@ server <- function(input, output) {
   
   initavti <- function(){
     ret = list()
-    for (c in names(ceste)) {
-      ret[[c]] = c(0.1, 0.2, 0.5, 0.7, 0.85, 0.88, 0.9)*dolzine[[c]]
+    for (c in rownames(ceste)) {
+      ret[[c]] = c(0.1, 0.2, 0.5, 0.7, 0.85, 0.88, 0.9)*ceste[c,5]
     }
     return(ret)
   }
   inithitrosti <- function(){
     ret = list()
-    for (c in names(ceste)) {
+    for (c in rownames(ceste)) {
       ret[[c]] = c(13, 17, 18, 16, 15, 14, 14) #m/s
     }
     return(ret)
@@ -31,7 +31,7 @@ server <- function(input, output) {
   }
   initomejitve <- function(){
     ret = list()
-    for (c in names(ceste)) {
+    for (c in rownames(ceste)) {
       ret[[c]] = 70
     }
     return(ret)
@@ -123,31 +123,19 @@ server <- function(input, output) {
     n = length(odziv$avti[[cesta]])
     noviavti = vector(length = n)
     novehitrosti = vector(length = n)
-    avtonaprej = c()
     if(n > 0){
       if(n > 1){
-        novo = foreach(i = 1:(n-1), .combine = rbind, .export = c("isolate", "input", "odziv")) %dopar% {
-          rez = isolate({
-            c(odziv$avti[[cesta]][i] + odziv$hitrosti[[cesta]][i]*dt*input$animacija,
-                    max(odziv$hitrosti[[cesta]][i] + acc(odziv$hitrosti[[cesta]][i], 
-                                                         odziv$hitrosti[[cesta]][i+1], 
-                                                         odziv$avti[[cesta]][i+1] - odziv$avti[[cesta]][i])*dt*input$animacija, 0))
-          })
-        }
-        if(n == 2){
-          noviavti[1] = novo[1]
-          novehitrosti[1] = novo[2]
-        }else{
-          i = 1
-          while(i < n){
-            noviavti[i] = novo[i,1]
-            novehitrosti[i] = novo[i,2]
-            i = i+1
-          }
+        i = 1
+        while(i < n){
+          noviavti[i] = odziv$avti[[cesta]][i] + odziv$hitrosti[[cesta]][i]*dt*input$animacija
+          novehitrosti[i] = max(odziv$hitrosti[[cesta]][i] + acc(odziv$hitrosti[[cesta]][i], 
+                                                                 odziv$hitrosti[[cesta]][i+1], 
+                                                                 odziv$avti[[cesta]][i+1] - odziv$avti[[cesta]][i])*dt*input$animacija, 0)
+          i = i+1
         }
       }
       noviavti[n] = odziv$avti[[cesta]][n] + odziv$hitrosti[[cesta]][n]*dt*input$animacija
-      if(noviavti[n] > dolzine[[cesta]]){
+      if(noviavti[n] > ceste[cesta,5]){
         # ce vodilni avto pride do konca
         if(length(odziv$kam[[cesta]]) == 0){
           #ce naprej ni ceste
@@ -170,16 +158,16 @@ server <- function(input, output) {
           }
           if(length(odziv$avti[[odziv$kam[[cesta]]]]) == 0){
             # ce je naslednja cesta prazna
-            odziv$noviavti[[odziv$kam[[cesta]]]] = c(a_nap - dolzine[[cesta]],
+            odziv$noviavti[[odziv$kam[[cesta]]]] = c(a_nap - ceste[cesta,5],
                                                      max(0, odziv$hitrosti[[cesta]][n+1] + acc(odziv$hitrosti[[cesta]][n+1],
                                                                                                odziv$omejitve[[cesta]]/3.6,
                                                                                                200)*dt*input$animacija))
           }else{
             # ce ne se prilagaja avtu na naslednji cesti
-            odziv$noviavti[[odziv$kam[[cesta]]]] = c(a_nap - dolzine[[cesta]],
+            odziv$noviavti[[odziv$kam[[cesta]]]] = c(a_nap - ceste[cesta,5],
                                                      max(0, odziv$hitrosti[[cesta]][n+1] + acc(odziv$hitrosti[[cesta]][n+1],
                                                                                                odziv$hitrosti[[odziv$kam[[cesta]]]][1],
-                                                                                               dolzine[[cesta]] - odziv$avti[[cesta]][n+1] + odziv$avti[[odziv$kam[[cesta]]]][1])*dt*input$animacija))
+                                                                                               ceste[cesta,5] - odziv$avti[[cesta]][n+1] + odziv$avti[[odziv$kam[[cesta]]]][1])*dt*input$animacija))
           }
           # zrebamo kam gre naslednji
           p = length(povezave[[cesta]])
@@ -201,7 +189,7 @@ server <- function(input, output) {
           # ce je na koncu rdeca luc
           novehitrosti[n] = max(0, odziv$hitrosti[[cesta]][n] + acc(odziv$hitrosti[[cesta]][n], 
                                                                     0.0, 
-                                                                    dolzine[[cesta]] - odziv$avti[[cesta]][n])*dt*input$animacija)
+                                                                    ceste[cesta,5] - odziv$avti[[cesta]][n])*dt*input$animacija)
         }else{
           if(length(povezave[[cesta]]) == 0){
             #ce naprej ni ceste
@@ -219,7 +207,7 @@ server <- function(input, output) {
               # ce ne se prilagaja avtu na naslednji cesti
               novehitrosti[n] = max(0, odziv$hitrosti[[cesta]][n] + acc(odziv$hitrosti[[cesta]][n], 
                                                                         odziv$hitrosti[[odziv$kam[[cesta]]]][1], 
-                                                                        dolzine[[cesta]] - odziv$avti[[cesta]][n] + odziv$avti[[odziv$kam[[cesta]]]][1])*dt*input$animacija)
+                                                                        ceste[cesta,5] - odziv$avti[[cesta]][n] + odziv$avti[[odziv$kam[[cesta]]]][1])*dt*input$animacija)
             }
           }
         }
@@ -253,11 +241,11 @@ server <- function(input, output) {
     
     # indikator se spremeni na Reset
     odziv$resetind <- 1
-    for(c in names(ceste)){
-      premaknicesto(c, ceste[[c]][4])
+    for(c in rownames(ceste)){
+      premaknicesto(c, ceste[c,4])
     }
     i = 1
-    for(c in names(ceste)){
+    for(c in rownames(ceste)){
       if(length(odziv$noviavti[[c]]) == 2){
         odziv$avti[[c]] = c(odziv$noviavti[[c]][1], odziv$avti[[c]])
         odziv$hitrosti[[c]] = c(odziv$noviavti[[c]][2], odziv$hitrosti[[c]])
@@ -324,6 +312,7 @@ server <- function(input, output) {
     }
   })
   
+  #menjamo prehodno verjetnost za cestahitrost -> nacesto
   observeEvent(input$boljprehodno, {
     i = 1
     req(input$nacesto)
@@ -368,9 +357,8 @@ server <- function(input, output) {
   #
   output$omrezje <- renderPlot({
     plot(c(0,10), c(1000, 1000), type = 'l', xlim = c(0, 1000), ylim = c(0,1000), xlab = 'x', ylab = 'y')
-    barve = c()
     i = 1
-    for (c in names(ceste)) {
+    for (c in rownames(ceste)) {
       # barva glede na obremenitev, zelena-rumena-rdeca
       obr = 1
       if(length(odziv$hitrosti[[c]]) > 0){
@@ -382,26 +370,24 @@ server <- function(input, output) {
       }else{
         obrbarva = rgb(1, min(1,max(0,2*obr)), 0, 1)
       }
-      lines(c(koor[[ceste[[c]][1]]]$x, koor[[ceste[[c]][2]]]$x), c(koor[[ceste[[c]][1]]]$y, koor[[ceste[[c]][2]]]$y), col = obrbarva, lwd=2)
+      lines(c(koor[ceste[c,1],1], koor[ceste[c,2],1]), c(koor[ceste[c,1],2], koor[ceste[c,2],2]), col = obrbarva, lwd=2)
       if(length(odziv$avti[[c]]) > 0){
-        x = (odziv$avti[[c]]/dolzine[[c]])*(koor[[ceste[[c]][2]]]$x - koor[[ceste[[c]][1]]]$x) + koor[[ceste[[c]][1]]]$x
-        y = (odziv$avti[[c]]/dolzine[[c]])*(koor[[ceste[[c]][2]]]$y - koor[[ceste[[c]][1]]]$y) + koor[[ceste[[c]][1]]]$y
-        points(x, y, col = ceste[[c]][3], pch = 19)
+        x = (odziv$avti[[c]]/ceste[c,5])*(koor[ceste[c,2],1] - koor[ceste[c,1],1]) + koor[ceste[c,1],1]
+        y = (odziv$avti[[c]]/ceste[c,5])*(koor[ceste[c,2],2] - koor[ceste[c,1],2]) + koor[ceste[c,1],2]
+        points(x, y, col = ceste[c,3], pch = 19)
       }
-      barve = c(barve, ceste[[c]][3])
       i = i+1
     }
-    legend(0, 1000, legend = names(ceste), col = barve, lty=1, pch = 19)
+    legend(0, 1000, legend = rownames(ceste), col = ceste[,3], lty=1, pch = 19)
   })
   
   # izrisemo cestne obremenitve
   #
   output$obremenitev <- renderPlot({
     plot(c(0,10), c(1000, 1000), type = 'l', xlim = c(0, 1000), ylim = c(0,1000), xlab = 'x', ylab = 'y')
-    barve = c()
-    for (c in names(ceste)) {
+    for (c in rownames(ceste)) {
       #pogledamo odseke po 100 m
-      odsekov = (dolzine[[c]]/100)
+      odsekov = (ceste[c,5]/100)
       avtov = vector(length = odsekov)
       kje = 1
       for(a in odziv$avti[[c]]){
@@ -410,10 +396,10 @@ server <- function(input, output) {
         }
         avtov[kje] = avtov[kje] + 1
       }
-      x = koor[[ceste[[c]][1]]]$x
-      y = koor[[ceste[[c]][1]]]$y
-      dx = (koor[[ceste[[c]][2]]]$x - koor[[ceste[[c]][1]]]$x)/odsekov
-      dy = (koor[[ceste[[c]][2]]]$y - koor[[ceste[[c]][1]]]$y)/odsekov
+      x = koor[ceste[c,1],1]
+      y = koor[ceste[c,1],2]
+      dx = (koor[ceste[c,2],1] - koor[ceste[c,1],1])/odsekov
+      dy = (koor[ceste[c,2],2] - koor[ceste[c,1],2])/odsekov
       for(j in 1:odsekov){
         # izracunamo hitrost s katero bi se dalo peljati po odseku
         # s hitrostjo v_1 se da peljati na varnostni razdalji avto + r*v_1 + v_1^2/(2*bremza)
@@ -442,8 +428,7 @@ server <- function(input, output) {
         x = x_nas
         y = y_nas
       }
-      barve = c(barve, ceste[[c]][3])
     }
-    legend(0, 1000, legend = names(ceste), col = barve, lty=1, pch = 19)
+    legend(0, 1000, legend = rownames(ceste), col = ceste[,3], lty=1, pch = 19)
   })
 }

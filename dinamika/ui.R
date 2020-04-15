@@ -40,7 +40,7 @@ fluidPage(
       wellPanel(
         fluidRow(
           column(5,
-                 selectInput("cestahitrost", "Cesta:", choices = names(ceste))
+                 selectInput("cestahitrost", "Cesta:", choices = rownames(ceste))
           )
         ),
         h4("Omejitev hitrosti:"),

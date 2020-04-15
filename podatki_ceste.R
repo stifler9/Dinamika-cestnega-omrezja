@@ -1,29 +1,28 @@
-dolzine = NULL
-dolzine$"ab" = 1000
-dolzine$"ad" = 900
-dolzine$"bc" = 700
-dolzine$"bd" = 800
-dolzine$"dc" = 700
-
-ceste = NULL
-ceste$"ab" = c("a", "b", 'blue', TRUE)
-ceste$"ad" = c("a", "d", 'gold3', TRUE)
-ceste$"bc" = c("b", "c", 'red', FALSE)
-ceste$"bd" = c("b", "d", 'green4', FALSE)
-ceste$"dc" = c("d", "c", 'purple', FALSE)
+ceste = data.frame()
+ceste[,1] = character()
+ceste[,2] = character()
+ceste[,3] = character()
+ceste[,4] = logical()
+ceste[,5] = numeric()
+ceste["ab",] = c("a", "b", 'blue', TRUE, 1000)
+ceste["ad",] = c("a", "d", 'gold3', TRUE, 900)
+ceste["bc",] = c("b", "c", 'red', FALSE, 700)
+ceste["bd",] = c("b", "d", 'green4', FALSE, 800)
+ceste["dc",] = c("d", "c", 'purple', FALSE, 700)
+ceste[,4] = as.logical(ceste[,4])
+ceste[,5] = as.numeric(ceste[,5])
 # ceste[[c]][4] == TRUE, ce je cesta zacetna
+# ceste[[c]][5] = dolzina
 
 povezave = NULL
 povezave$"ab" = c("bc","bd")
 povezave$"bd" = c("dc")
 povezave$"ad" = c("dc")
 
-koor = NULL
-koor$"a"$x = 0
-koor$"a"$y = 500
-koor$"b"$x = 600
-koor$"b"$y = 1000
-koor$"c"$x = 1000
-koor$"c"$y = 600
-koor$"d"$x = 600
-koor$"d"$y = 50
+koor = data.frame()
+koor[,1] = numeric()
+koor[,2] = numeric()
+koor["a",] = c(0,500)
+koor["b",] = c(600,1000)
+koor["c",] = c(1000,600)
+koor["d",] = c(650,50)
