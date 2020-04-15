@@ -297,10 +297,11 @@ server <- function(input, output) {
     odziv$resetind <- 0
     odziv$avti <- initavti()
     odziv$hitrosti <- inithitrosti()
-    odziv$semaforji <- list(abbc = c(TRUE))
+    odziv$semaforji <- list(addc = c(TRUE))
     odziv$kam = initkam()
     odziv$noviavti = list(bc = c(), bd = c())
     odziv$omejitve = initomejitve()
+    odziv$prehodne = initprehodne()
   })
   
   observeEvent(input$manjhit, {
