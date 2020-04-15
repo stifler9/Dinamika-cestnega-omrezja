@@ -1,5 +1,3 @@
-# konstantni podatki o cestah, povezanosti, prehodnosti
-#
 dolzine = NULL
 dolzine$"ab" = 1000
 dolzine$"ad" = 900

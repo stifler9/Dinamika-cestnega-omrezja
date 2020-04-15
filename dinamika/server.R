@@ -1,5 +1,6 @@
 library(Rlab)
 library(shiny)
+library(shinyjs)
 library(foreach)
 
 server <- function(input, output) {
@@ -7,20 +8,58 @@ server <- function(input, output) {
   source("../podatki_ceste.r")
   source("../vozniki.r")
   
+  initavti <- function(){
+    ret = list()
+    for (c in names(ceste)) {
+      ret[[c]] = c(0.1, 0.2, 0.5, 0.7, 0.85, 0.88, 0.9)*dolzine[[c]]
+    }
+    return(ret)
+  }
+  inithitrosti <- function(){
+    ret = list()
+    for (c in names(ceste)) {
+      ret[[c]] = c(13, 17, 18, 16, 15, 14, 14) #m/s
+    }
+    return(ret)
+  }
+  initkam <- function(){
+    ret = list()
+    for (p in names(povezave)) {
+      ret[[p]] = povezave[[p]][1]
+    }
+    return(ret)
+  }
+  initomejitve <- function(){
+    ret = list()
+    for (c in names(ceste)) {
+      ret[[c]] = 70
+    }
+    return(ret)
+  }
+  initprehodne <- function(){
+    ret = list()
+    for (c in names(povezave)) {
+      n = length(povezave[[c]])
+      if(n > 1){
+        ret[[c]] = rep(1/n, n)
+      }
+    }
+    return(ret)
+  }
+  
   #parametri ki se spreminjajo
   odziv <- reactiveValues()
   odziv$resetind <- 0
-  odziv$avti = list(ab = c(0.1, 0.15, 0.2, 0.5, 0.7, 0.8, 0.85, 0.88, 0.9)*dolzine$"ab")
-  odziv$hitrosti <- list(ab = c(13, 17, 17, 18, 16, 15, 15, 14, 14),
-                         bc = c()) #m/s
+  odziv$avti = initavti()
+  odziv$hitrosti <- inithitrosti()
   # semaforji, "iz kje" + "kam", ce je list prazen je zelena
   odziv$semaforji <- list(addc = c(TRUE))
   # kam gre naslednji avto
-  odziv$kam = list(ab = povezave$"ab"[1],
-                   ad = povezave$"ad"[1],
-                   bd = povezave$"bd"[1])
+  odziv$kam = initkam()
   # za shranjevanje avtov ki so prisli na novo cesto
-  odziv$noviavti = list(bc = c(), bd = c())
+  odziv$noviavti = list()
+  odziv$omejitve = initomejitve()
+  odziv$prehodne = initprehodne()
   
   output$resetbutton<-renderUI({
     if(odziv$resetind==0){
@@ -29,6 +68,29 @@ server <- function(input, output) {
       lbl<-"Reset"
     }
     actionButton("reset",label=lbl)
+  })
+  
+  output$hitrost<-renderUI({
+    actionButton("hit", label = paste(odziv$omejitve[[input$cestahitrost]],"km/h"))
+  })
+  
+  output$nakaterocesto<-renderUI({
+    selectInput("nacesto", "Na katero cesto:",
+                choices = povezave[[input$cestahitrost]]
+    )
+  })
+  
+  output$prehodna<-renderUI({
+    i = 1
+    req(input$nacesto)
+    for (c in povezave[[input$cestahitrost]]) {
+      if(c == input$nacesto){
+        break
+      }
+      i = i+1
+    }
+    lbl = odziv$prehodne[[input$cestahitrost]][i]
+    actionButton("preh", label = lbl)
   })
   
   output$semaforadbd<-renderUI({
@@ -51,7 +113,7 @@ server <- function(input, output) {
         return(bremza)
       }
       if(gap - avto > 3*v1){
-        rez = lambda*((input[[paste("hitrost",cesta,sep='')]]/3.6) - v1)
+        rez = lambda*((odziv$omejitve[[cesta]]/3.6) - v1)
       }else{
         rez = lambda*(v2 - v1)
       }
@@ -110,7 +172,7 @@ server <- function(input, output) {
             # ce je naslednja cesta prazna
             odziv$noviavti[[odziv$kam[[cesta]]]] = c(a_nap - dolzine[[cesta]],
                                                      max(0, odziv$hitrosti[[cesta]][n+1] + acc(odziv$hitrosti[[cesta]][n+1],
-                                                                                               input[[paste("hitrost",cesta,sep='')]]/3.6,
+                                                                                               odziv$omejitve[[cesta]]/3.6,
                                                                                                200)*dt*input$animacija))
           }else{
             # ce ne se prilagaja avtu na naslednji cesti
@@ -125,9 +187,10 @@ server <- function(input, output) {
             ci = 1
             u = runif(1)
             while(ci < p){
-              if(input[[paste("prehodna", cesta, sep='')]][ci] > u){
+              if(odziv$prehodne[[cesta]][ci] > u){
                 break
               }
+              u = u - odziv$prehodne[[cesta]][ci]
               ci = ci + 1
             }
             odziv$kam[[cesta]] = povezave[[cesta]][ci]
@@ -143,14 +206,14 @@ server <- function(input, output) {
           if(length(povezave[[cesta]]) == 0){
             #ce naprej ni ceste
             novehitrosti[n] = max(0, odziv$hitrosti[[cesta]][n] + acc(odziv$hitrosti[[cesta]][n], 
-                                                                      input[[paste("hitrost",cesta,sep='')]]/3.6, 
+                                                                      odziv$omejitve[[cesta]]/3.6, 
                                                                       200)*dt*input$animacija)
           }else{
             # na koncu druga cesta
             if(length(odziv$avti[[odziv$kam[[cesta]]]]) == 0){
               # ce je naslednja cesta prazna
               novehitrosti[n] = max(0, odziv$hitrosti[[cesta]][n] + acc(odziv$hitrosti[[cesta]][n], 
-                                                                        input[[paste("hitrost",cesta,sep='')]]/3.6, 
+                                                                        odziv$omejitve[[cesta]]/3.6, 
                                                                         200)*dt*input$animacija)
             }else{
               # ce ne se prilagaja avtu na naslednji cesti
@@ -167,8 +230,8 @@ server <- function(input, output) {
         # ce se na zacetku pojavi nov avto
         odziv$avti[[cesta]] = c(0.0, noviavti)
         odziv$hitrosti[[cesta]] = c(runif(1, 
-                                          (input[[paste("hitrost",cesta,sep='')]] - 10)/3.6,
-                                          (input[[paste("hitrost",cesta,sep='')]] + 10)/3.6),
+                                          (odziv$omejitve[[cesta]] - 10)/3.6,
+                                          (odziv$omejitve[[cesta]] + 10)/3.6),
                                     novehitrosti)
       }else{
         odziv$avti[[cesta]] = noviavti
@@ -187,16 +250,9 @@ server <- function(input, output) {
     req(input$animacija)
     req(input$intenzivnostab)
     req(input$intenzivnostad)
-    req(input$hitrostab)
-    req(input$hitrostad)
-    req(input$hitrostbc)
-    req(input$hitrostbd)
-    req(input$hitrostdc)
-    req(input$prehodnaab)
     
     # indikator se spremeni na Reset
     odziv$resetind <- 1
-    
     for(c in names(ceste)){
       premaknicesto(c, ceste[[c]][4])
     }
@@ -210,7 +266,6 @@ server <- function(input, output) {
       i = i+1
     }
   }
-  
   
   # sprozilci
   observeEvent(input$semaforAdBd,{
@@ -240,13 +295,72 @@ server <- function(input, output) {
   
   observeEvent(input$reset,{
     odziv$resetind <- 0
-    odziv$avti <- list(ab = c(0.1, 0.15, 0.2, 0.5, 0.7, 0.8, 0.85, 0.88, 0.9)*dolzine$"ab", bc = c())
-    odziv$hitrosti <- list(ab = c(13, 17, 17, 18, 16, 15, 15, 14, 14), bc = c())
+    odziv$avti <- initavti()
+    odziv$hitrosti <- inithitrosti()
     odziv$semaforji <- list(abbc = c(TRUE))
-    odziv$kam = list(ab = povezave$"ab"[1],
-                     ad = povezave$"ad"[1],
-                     bd = povezave$"bd"[1])
+    odziv$kam = initkam()
     odziv$noviavti = list(bc = c(), bd = c())
+    odziv$omejitve = initomejitve()
+  })
+  
+  observeEvent(input$manjhit, {
+    if(odziv$omejitve[[input$cestahitrost]] > 0){
+      odziv$omejitve[[input$cestahitrost]] = odziv$omejitve[[input$cestahitrost]] - 5
+    }
+  })
+  
+  observeEvent(input$vechit, {
+    if(odziv$omejitve[[input$cestahitrost]] < 150){
+      odziv$omejitve[[input$cestahitrost]] = odziv$omejitve[[input$cestahitrost]] + 5
+    }
+  })
+  
+  observeEvent(input$cestahitrost, {
+    if(length(povezave[[input$cestahitrost]]) > 1){
+      shinyjs::show("menjavaprehodnih")
+    }else{
+      shinyjs::hide("menjavaprehodnih")
+    }
+  })
+  
+  observeEvent(input$boljprehodno, {
+    i = 1
+    req(input$nacesto)
+    for (c in povezave[[input$cestahitrost]]) {
+      if(c == input$nacesto){
+        break
+      }
+      i = i+1
+    }
+    if(odziv$prehodne[[input$cestahitrost]][i] < 1){
+      odziv$prehodne[[input$cestahitrost]][i] = round(odziv$prehodne[[input$cestahitrost]][i] + 0.02,2)
+      n = length(povezave[[input$cestahitrost]])
+      for(j in 1:n){
+        if(j != i){
+          odziv$prehodne[[input$cestahitrost]][j] = round(odziv$prehodne[[input$cestahitrost]][j] - 0.02/(n-1),2)
+        }
+      }
+    }
+  })
+  
+  observeEvent(input$manjprehodno, {
+    i = 1
+    req(input$nacesto)
+    for (c in povezave[[input$cestahitrost]]) {
+      if(c == input$nacesto){
+        break
+      }
+      i = i+1
+    }
+    if(odziv$prehodne[[input$cestahitrost]][i] > 0){
+      odziv$prehodne[[input$cestahitrost]][i] = round(odziv$prehodne[[input$cestahitrost]][i] - 0.02,2)
+      n = length(povezave[[input$cestahitrost]])
+      for(j in 1:n){
+        if(j != i){
+          odziv$prehodne[[input$cestahitrost]][j] = round(odziv$prehodne[[input$cestahitrost]][j] + 0.02/(n-1),2)
+        }
+      }
+    }
   })
   
   # izrisemo trenutno stanje avtov
@@ -259,7 +373,7 @@ server <- function(input, output) {
       # barva glede na obremenitev, zelena-rumena-rdeca
       obr = 1
       if(length(odziv$hitrosti[[c]]) > 0){
-        obr = mean(odziv$hitrosti[[c]])*3.6/input[[paste("hitrost", c, sep='')]]
+        obr = mean(odziv$hitrosti[[c]])*3.6/odziv$omejitve[[c]]
       }
       obrbarva = ""
       if(obr > 1/2){
@@ -300,7 +414,7 @@ server <- function(input, output) {
       dx = (koor[[ceste[[c]][2]]]$x - koor[[ceste[[c]][1]]]$x)/odsekov
       dy = (koor[[ceste[[c]][2]]]$y - koor[[ceste[[c]][1]]]$y)/odsekov
       for(j in 1:odsekov){
-        #izracunamo hitrost s katero bi se dalo peljati po odseku
+        # izracunamo hitrost s katero bi se dalo peljati po odseku
         # s hitrostjo v_1 se da peljati na varnostni razdalji avto + r*v_1 + v_1^2/(2*bremza)
         # kjer je r reakcijski cas, v tem primeru 1/20s. Obrnemo enacbo da dobimo hitrost hit
         # razdalja je ocenjena glede na stevilo avtomobilov
@@ -309,7 +423,7 @@ server <- function(input, output) {
         if(avtov[j] > 1){
           r = dt*input$animacija
           hit = -bremza*(-r + sqrt(max(0,r*r - 2*(((100/(avtov[j]))-avto)/bremza))))
-          obr = hit/input[[paste("hitrost",c, sep = '')]]
+          obr = hit/odziv$omejitve[[c]]
           #barva glede na obremenitev
           if(obr > 1/2){
             obrbarva = rgb(min(1,max(0,(1-obr)*2)), 1, 0, 1)
