@@ -1,7 +1,6 @@
 library(Rlab)
 library(shiny)
 library(shinyjs)
-library(foreach)
 
 source("../podatki_ceste.r")
 
@@ -39,7 +38,7 @@ fluidPage(
       ),
       wellPanel(
         fluidRow(
-          column(5,
+          column(8,
                  selectInput("cestahitrost", "Cesta:", choices = rownames(ceste))
           )
         ),

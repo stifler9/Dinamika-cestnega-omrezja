@@ -1,7 +1,6 @@
 library(Rlab)
 library(shiny)
 library(shinyjs)
-library(foreach)
 
 server <- function(input, output) {
   
@@ -370,10 +369,15 @@ server <- function(input, output) {
       }else{
         obrbarva = rgb(1, min(1,max(0,2*obr)), 0, 1)
       }
-      lines(c(koor[ceste[c,1],1], koor[ceste[c,2],1]), c(koor[ceste[c,1],2], koor[ceste[c,2],2]), col = obrbarva, lwd=2)
+      dx = koor[ceste[c,2],1] - koor[ceste[c,1],1]
+      dy = koor[ceste[c,2],2] - koor[ceste[c,1],2]
+      norma = sqrt(dx*dx + dy*dy)
+      x = koor[ceste[c,1],1] + 3*dy/norma
+      y = koor[ceste[c,1],2] - 3*dx/norma
+      lines(c(x, x+dx), c(y, y+dy), col = obrbarva, lwd=2)
       if(length(odziv$avti[[c]]) > 0){
-        x = (odziv$avti[[c]]/ceste[c,5])*(koor[ceste[c,2],1] - koor[ceste[c,1],1]) + koor[ceste[c,1],1]
-        y = (odziv$avti[[c]]/ceste[c,5])*(koor[ceste[c,2],2] - koor[ceste[c,1],2]) + koor[ceste[c,1],2]
+        x = (odziv$avti[[c]]/ceste[c,5])*dx + x
+        y = (odziv$avti[[c]]/ceste[c,5])*dy + y
         points(x, y, col = ceste[c,3], pch = 19)
       }
       i = i+1
@@ -396,10 +400,11 @@ server <- function(input, output) {
         }
         avtov[kje] = avtov[kje] + 1
       }
-      x = koor[ceste[c,1],1]
-      y = koor[ceste[c,1],2]
       dx = (koor[ceste[c,2],1] - koor[ceste[c,1],1])/odsekov
       dy = (koor[ceste[c,2],2] - koor[ceste[c,1],2])/odsekov
+      norma = sqrt(dx*dx + dy*dy)
+      x = koor[ceste[c,1],1] + 3*dy/norma
+      y = koor[ceste[c,1],2] - 3*dx/norma
       for(j in 1:odsekov){
         # izracunamo hitrost s katero bi se dalo peljati po odseku
         # s hitrostjo v_1 se da peljati na varnostni razdalji avto + r*v_1 + v_1^2/(2*bremza)
