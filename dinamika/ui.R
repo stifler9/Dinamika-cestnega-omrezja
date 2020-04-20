@@ -16,29 +16,9 @@ fluidPage(
         h4("Semafor (ad/bd->dc):"),
         uiOutput("semaforadbd")
       ),
-      fluidRow(h4("Intenzivnosti prihoda novih:")),
-      # inputi potrebni za izracune
-      fluidRow(
-        column(6,
-               sliderInput("intenzivnostab",
-                           "AB (/s):",
-                           min = 0.0,
-                           max = 1.0,
-                           step = 0.02,
-                           value = 0.3)
-        ),
-        column(6,
-               sliderInput("intenzivnostad",
-                           "AD (/s):",
-                           min = 0.0,
-                           max = 1.0,
-                           step = 0.02,
-                           value = 0.3)
-        )
-      ),
       wellPanel(
         fluidRow(
-          column(8,
+          column(8, offset = 2,
                  selectInput("cestahitrost", "Cesta:", choices = rownames(ceste))
           )
         ),
@@ -50,8 +30,19 @@ fluidPage(
           column(4,
                  uiOutput("hitrost")
           ),
-          column(2,
+          column(2, offset = 1,
                  actionButton("vechit", ">")
+          )
+        ),
+        shinyjs::hidden(
+          div(
+            id = "menjavaintenzivnosti",
+            h4("Intenzivnost prihoda (/s):"),
+            fluidRow(
+              column(3,actionButton("manjintenzivno", label = "<")),
+              column(4,uiOutput("intenzivnost")),
+              column(2,actionButton("boljintenzivno", label = ">"))
+            )
           )
         ),
         shinyjs::hidden(
@@ -70,7 +61,7 @@ fluidPage(
       #
       
       wellPanel(
-        actionButton("stop","Stop"), actionButton("play","Play"),uiOutput("resetbutton"),
+        actionButton("stop","Stop"), actionButton("play","Play"), uiOutput("resetbutton"),
         sliderInput('animacija', "Hitrost animacije:",
                     min=0.25,
                     max=4,

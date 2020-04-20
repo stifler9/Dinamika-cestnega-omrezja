@@ -45,6 +45,15 @@ server <- function(input, output) {
     }
     return(ret)
   }
+  initintenzivnosti <- function(){
+    ret = list()
+    for (c in rownames(ceste)) {
+      if(ceste[c,4]){
+        ret[[c]] = 0.3
+      }
+    }
+    return(ret)
+  }
   
   #parametri ki se spreminjajo
   odziv <- reactiveValues()
@@ -59,6 +68,7 @@ server <- function(input, output) {
   odziv$noviavti = list()
   odziv$omejitve = initomejitve()
   odziv$prehodne = initprehodne()
+  odziv$intenzivnosti = initintenzivnosti()
   
   output$resetbutton<-renderUI({
     if(odziv$resetind==0){
@@ -77,6 +87,10 @@ server <- function(input, output) {
     selectInput("nacesto", "Na katero cesto:",
                 choices = povezave[[input$cestahitrost]]
     )
+  })
+  
+  output$intenzivnost<-renderUI({
+    actionButton("int", label = odziv$intenzivnosti[[input$cestahitrost]])
   })
   
   output$prehodna<-renderUI({
@@ -213,7 +227,7 @@ server <- function(input, output) {
       }
     }
     if(zacetna){
-      if(rbern(1, dt*input$animacija*input[[paste("intenzivnost", cesta, sep = '')]])){
+      if(rbern(1, dt*input$animacija*odziv$intenzivnosti[[cesta]])){
         # ce se na zacetku pojavi nov avto
         odziv$avti[[cesta]] = c(0.0, noviavti)
         odziv$hitrosti[[cesta]] = c(runif(1, 
@@ -235,8 +249,6 @@ server <- function(input, output) {
     
     # te spremenljivke potrebujemo za nove izracune
     req(input$animacija)
-    req(input$intenzivnostab)
-    req(input$intenzivnostad)
     
     # indikator se spremeni na Reset
     odziv$resetind <- 1
@@ -289,18 +301,7 @@ server <- function(input, output) {
     odziv$noviavti = list(bc = c(), bd = c())
     odziv$omejitve = initomejitve()
     odziv$prehodne = initprehodne()
-  })
-  
-  observeEvent(input$manjhit, {
-    if(odziv$omejitve[[input$cestahitrost]] > 0){
-      odziv$omejitve[[input$cestahitrost]] = odziv$omejitve[[input$cestahitrost]] - 5
-    }
-  })
-  
-  observeEvent(input$vechit, {
-    if(odziv$omejitve[[input$cestahitrost]] < 150){
-      odziv$omejitve[[input$cestahitrost]] = odziv$omejitve[[input$cestahitrost]] + 5
-    }
+    odziv$intenzivnosti = initintenzivnosti()
   })
   
   observeEvent(input$cestahitrost, {
@@ -309,12 +310,46 @@ server <- function(input, output) {
     }else{
       shinyjs::hide("menjavaprehodnih")
     }
+    if(ceste[input$cestahitrost,4]){
+      shinyjs::show("menjavaintenzivnosti")
+    }else{
+      shinyjs::hide("menjavaintenzivnosti")
+    }
+  })
+  
+  observeEvent(input$manjhit, {
+    req(input$cestahitrost)
+    if(odziv$omejitve[[input$cestahitrost]] > 5){
+      odziv$omejitve[[input$cestahitrost]] = odziv$omejitve[[input$cestahitrost]] - 5
+    }
+  })
+  
+  observeEvent(input$vechit, {
+    req(input$cestahitrost)
+    if(odziv$omejitve[[input$cestahitrost]] < 150){
+      odziv$omejitve[[input$cestahitrost]] = odziv$omejitve[[input$cestahitrost]] + 5
+    }
+  })
+  
+  observeEvent(input$manjintenzivno, {
+    req(input$cestahitrost)
+    if(odziv$intenzivnosti[[input$cestahitrost]] > 0){
+      odziv$intenzivnosti[[input$cestahitrost]] = round(odziv$intenzivnosti[[input$cestahitrost]] - 0.02, 2)
+    }
+  })
+  
+  observeEvent(input$boljintenzivno, {
+    req(input$cestahitrost)
+    if(odziv$intenzivnosti[[input$cestahitrost]] < 1){
+      odziv$intenzivnosti[[input$cestahitrost]] = round(odziv$intenzivnosti[[input$cestahitrost]] + 0.02, 2)
+    }
   })
   
   #menjamo prehodno verjetnost za cestahitrost -> nacesto
   observeEvent(input$boljprehodno, {
     i = 1
     req(input$nacesto)
+    req(input$cestahitrost)
     for (c in povezave[[input$cestahitrost]]) {
       if(c == input$nacesto){
         break
@@ -335,6 +370,7 @@ server <- function(input, output) {
   observeEvent(input$manjprehodno, {
     i = 1
     req(input$nacesto)
+    req(input$cestahitrost)
     for (c in povezave[[input$cestahitrost]]) {
       if(c == input$nacesto){
         break
@@ -355,6 +391,7 @@ server <- function(input, output) {
   # izrisemo trenutno stanje avtov
   #
   output$omrezje <- renderPlot({
+    req(session$timer)
     plot(c(0,10), c(1000, 1000), type = 'l', xlim = c(0, 1000), ylim = c(0,1000), xlab = 'x', ylab = 'y')
     i = 1
     for (c in rownames(ceste)) {
@@ -388,6 +425,7 @@ server <- function(input, output) {
   # izrisemo cestne obremenitve
   #
   output$obremenitev <- renderPlot({
+    req(session$timer)
     plot(c(0,10), c(1000, 1000), type = 'l', xlim = c(0, 1000), ylim = c(0,1000), xlab = 'x', ylab = 'y')
     for (c in rownames(ceste)) {
       #pogledamo odseke po 100 m
