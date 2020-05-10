@@ -39,9 +39,7 @@ server <- function(input, output) {
     ret = list()
     for (c in names(povezave)) {
       n = length(povezave[[c]])
-      if(n > 1){
-        ret[[c]] = rep(1/n, n)
-      }
+      ret[[c]] = round(rep(1/n, n),2)
     }
     return(ret)
   }
@@ -182,19 +180,24 @@ server <- function(input, output) {
                                                                                                odziv$hitrosti[[odziv$kam[[cesta]]]][1],
                                                                                                ceste[cesta,5] - odziv$avti[[cesta]][n+1] + odziv$avti[[odziv$kam[[cesta]]]][1])*dt*input$animacija))
           }
-          # zrebamo kam gre naslednji
-          p = length(povezave[[cesta]])
-          if(p > 1){
-            ci = 1
-            u = runif(1)
-            while(ci < p){
-              if(odziv$prehodne[[cesta]][ci] > u){
-                break
-              }
-              u = u - odziv$prehodne[[cesta]][ci]
-              ci = ci + 1
+        }
+        # zrebamo kam gre naslednji
+        p = length(povezave[[cesta]])
+        print(cesta) ####
+        if(p > 0){
+          ci = 1
+          u = runif(1)
+          while(ci <= p){
+            if(odziv$prehodne[[cesta]][ci] > u){
+              break
             }
+            u = u - odziv$prehodne[[cesta]][ci]
+            ci = ci + 1
+          }
+          if(ci <= p){
             odziv$kam[[cesta]] = povezave[[cesta]][ci]
+          }else{
+            odziv$kam[[cesta]] = NULL
           }
         }
       }else{
@@ -204,8 +207,8 @@ server <- function(input, output) {
                                                                     0.0, 
                                                                     ceste[cesta,5] - odziv$avti[[cesta]][n])*dt*input$animacija)
         }else{
-          if(length(povezave[[cesta]]) == 0){
-            #ce naprej ni ceste
+          if(length(odziv$kam[[cesta]]) == 0){
+            #ce gre ven iz cest
             novehitrosti[n] = max(0, odziv$hitrosti[[cesta]][n] + acc(odziv$hitrosti[[cesta]][n], 
                                                                       odziv$omejitve[[cesta]]/3.6, 
                                                                       200)*dt*input$animacija)
@@ -305,7 +308,7 @@ server <- function(input, output) {
   })
   
   observeEvent(input$cestahitrost, {
-    if(length(povezave[[input$cestahitrost]]) > 1){
+    if(length(povezave[[input$cestahitrost]]) > 0){
       shinyjs::show("menjavaprehodnih")
     }else{
       shinyjs::hide("menjavaprehodnih")
@@ -356,14 +359,8 @@ server <- function(input, output) {
       }
       i = i+1
     }
-    if(odziv$prehodne[[input$cestahitrost]][i] < 1){
-      odziv$prehodne[[input$cestahitrost]][i] = round(odziv$prehodne[[input$cestahitrost]][i] + 0.02,2)
-      n = length(povezave[[input$cestahitrost]])
-      for(j in 1:n){
-        if(j != i){
-          odziv$prehodne[[input$cestahitrost]][j] = round(odziv$prehodne[[input$cestahitrost]][j] - 0.02/(n-1),2)
-        }
-      }
+    if(sum(odziv$prehodne[[input$cestahitrost]]) < 1){
+      odziv$prehodne[[input$cestahitrost]][i] = round(odziv$prehodne[[input$cestahitrost]][i] + 0.01,2)
     }
   })
   
@@ -378,13 +375,7 @@ server <- function(input, output) {
       i = i+1
     }
     if(odziv$prehodne[[input$cestahitrost]][i] > 0){
-      odziv$prehodne[[input$cestahitrost]][i] = round(odziv$prehodne[[input$cestahitrost]][i] - 0.02,2)
-      n = length(povezave[[input$cestahitrost]])
-      for(j in 1:n){
-        if(j != i){
-          odziv$prehodne[[input$cestahitrost]][j] = round(odziv$prehodne[[input$cestahitrost]][j] + 0.02/(n-1),2)
-        }
-      }
+      odziv$prehodne[[input$cestahitrost]][i] = round(odziv$prehodne[[input$cestahitrost]][i] - 0.01,2)
     }
   })
   
