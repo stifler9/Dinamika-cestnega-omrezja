@@ -59,7 +59,7 @@ server <- function(input, output) {
   odziv$avti = initavti()
   odziv$hitrosti <- inithitrosti()
   # semaforji, "iz kje" + "kam", ce je list prazen je zelena
-  odziv$semaforji <- list(addc = c(TRUE))
+  odziv$semaforji <- list(ad_dc = c(TRUE))
   # kam gre naslednji avto
   odziv$kam = initkam()
   # za shranjevanje avtov ki so prisli na novo cesto
@@ -105,7 +105,7 @@ server <- function(input, output) {
   })
   
   output$semaforadbd<-renderUI({
-    if(length(odziv$semaforji$addc)>0){
+    if(length(odziv$semaforji$ad_dc)>0){
       lbl<-"Zelena (bd->dc)"
     }else{
       lbl<-"Zelena (ad->dc)"
@@ -200,7 +200,7 @@ server <- function(input, output) {
           }
         }
       }else{
-        if(length(odziv$semaforji[[paste(cesta, odziv$kam[[cesta]], sep='')]]) > 0){
+        if(length(odziv$semaforji[[paste(cesta, odziv$kam[[cesta]], sep='_')]]) > 0){
           # ce je na koncu rdeca luc
           novehitrosti[n] = max(0, odziv$hitrosti[[cesta]][n] + acc(odziv$hitrosti[[cesta]][n], 
                                                                     0.0, 
@@ -270,12 +270,12 @@ server <- function(input, output) {
   
   # sprozilci
   observeEvent(input$semaforAdBd,{
-    if(length(odziv$semaforji$addc)>0){
-      odziv$semaforji$addc = c()
-      odziv$semaforji$bddc = c(TRUE)
+    if(length(odziv$semaforji$ad_dc)>0){
+      odziv$semaforji$ad_dc = c()
+      odziv$semaforji$bd_dc = c(TRUE)
     }else{
-      odziv$semaforji$addc = c(TRUE)
-      odziv$semaforji$bddc = c()
+      odziv$semaforji$ad_dc = c(TRUE)
+      odziv$semaforji$bd_dc = c()
     }
   })
   
@@ -405,7 +405,7 @@ server <- function(input, output) {
       if(length(odziv$avti[[c]]) > 0){
         x = (odziv$avti[[c]]/ceste[c,5])*dx + x
         y = (odziv$avti[[c]]/ceste[c,5])*dy + y
-        points(x, y, col = ceste[c,3], pch = 19)
+        points(x, y, col = ceste[c,3], pch = 16)
       }
       i = i+1
     }
