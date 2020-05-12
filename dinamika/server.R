@@ -52,6 +52,24 @@ server <- function(input, output) {
     }
     return(ret)
   }
+  initsemaforji <- function(){
+    ret = list()
+    for (n in names(semaforji)) {
+      for (sem in colnames(semaforji[[n]])) {
+        if(semaforji[[n]][1,sem]){
+          ret[[sem]] = c(TRUE)
+        }
+      }
+    }
+    return(ret)
+  }
+  initstanjesemafor <- function(){
+    ret = list()
+    for (n in names(semaforji)) {
+      ret[[n]] = 1
+    }
+    return(ret)
+  }
   
   #parametri ki se spreminjajo
   odziv <- reactiveValues()
@@ -59,7 +77,9 @@ server <- function(input, output) {
   odziv$avti = initavti()
   odziv$hitrosti <- inithitrosti()
   # semaforji, "iz kje" + "kam", ce je list prazen je zelena
-  odziv$semaforji <- list(ad_dc = c(TRUE))
+  odziv$semaforji <- initsemaforji()
+  # opcija semaforja
+  odziv$stanjesemafor <- initstanjesemafor()
   # kam gre naslednji avto
   odziv$kam = initkam()
   # za shranjevanje avtov ki so prisli na novo cesto
@@ -70,7 +90,7 @@ server <- function(input, output) {
   
   output$resetbutton<-renderUI({
     if(odziv$resetind==0){
-      lbl<-"All set"
+      lbl<-"Pripravljen"
     }else{
       lbl<-"Reset"
     }
@@ -104,13 +124,15 @@ server <- function(input, output) {
     actionButton("preh", label = lbl)
   })
   
-  output$semaforadbd<-renderUI({
-    if(length(odziv$semaforji$ad_dc)>0){
-      lbl<-"Zelena (bd->dc)"
-    }else{
-      lbl<-"Zelena (ad->dc)"
+  output$stanjesemaforjev <- renderUI({
+    req(input$semafor)
+    lbl = "Rdece:"
+    for (i in colnames(semaforji[[input$semafor]])) {
+      if(semaforji[[input$semafor]][odziv$stanjesemafor[[input$semafor]],i]){
+        lbl = paste(lbl, i, ", ")
+      }
     }
-    actionButton("semaforAdBd",label=lbl)
+    h5(lbl)
   })
   
   # funkcija premika avtomobilov na cesti pri spremembi casa dt
@@ -200,7 +222,7 @@ server <- function(input, output) {
           }
         }
       }else{
-        if(length(odziv$semaforji[[paste(cesta, odziv$kam[[cesta]], sep='_')]]) > 0){
+        if(length(odziv$semaforji[[paste(cesta, odziv$kam[[cesta]], sep='__')]]) > 0){
           # ce je na koncu rdeca luc
           novehitrosti[n] = max(0, odziv$hitrosti[[cesta]][n] + acc(odziv$hitrosti[[cesta]][n], 
                                                                     0.0, 
@@ -269,17 +291,8 @@ server <- function(input, output) {
   }
   
   # sprozilci
-  observeEvent(input$semaforAdBd,{
-    if(length(odziv$semaforji$ad_dc)>0){
-      odziv$semaforji$ad_dc = c()
-      odziv$semaforji$bd_dc = c(TRUE)
-    }else{
-      odziv$semaforji$ad_dc = c(TRUE)
-      odziv$semaforji$bd_dc = c()
-    }
-  })
-  
-  #timer
+
+  # timer
   session<-reactiveValues()
   session$timer<-reactiveTimer(Inf)
   
@@ -298,12 +311,29 @@ server <- function(input, output) {
     odziv$resetind <- 0
     odziv$avti <- initavti()
     odziv$hitrosti <- inithitrosti()
-    odziv$semaforji <- list(addc = c(TRUE))
+    odziv$semaforji <- initsemaforji()
+    odziv$stanjesemafor <- initstanjesemafor()
     odziv$kam = initkam()
     odziv$noviavti = list(bc = c(), bd = c())
     odziv$omejitve = initomejitve()
     odziv$prehodne = initprehodne()
     odziv$intenzivnosti = initintenzivnosti()
+  })
+  
+  observeEvent(input$spr_semafor, {
+    req(input$semafor)
+    if(odziv$stanjesemafor[[input$semafor]] < length(semaforji[[input$semafor]][,1])){
+      odziv$stanjesemafor[[input$semafor]] = odziv$stanjesemafor[[input$semafor]] + 1
+    }else{
+      odziv$stanjesemafor[[input$semafor]] = 1
+    }
+    for (i in colnames(semaforji[[input$semafor]])) {
+      if(semaforji[[input$semafor]][odziv$stanjesemafor[[input$semafor]],i]){
+        odziv$semaforji[[i]] = c(TRUE)
+      }else{
+        odziv$semaforji[[i]] = c()
+      }
+    }
   })
   
   observeEvent(input$cestahitrost, {

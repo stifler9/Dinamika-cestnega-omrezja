@@ -29,6 +29,6 @@ koor["d",] = c(650,50)
 
 semaforji = NULL
 semaforji$"d" = data.frame(matrix(nrow = 2, ncol = 2))
-colnames(semaforji$"d") = c("ad_dc", "bd_dc")
+colnames(semaforji$"d") = c("ad__dc", "bd__dc")
 semaforji$d[1,] = c(TRUE, FALSE)
 semaforji$d[2,] = c(FALSE, TRUE)

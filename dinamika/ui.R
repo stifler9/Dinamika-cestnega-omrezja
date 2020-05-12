@@ -13,8 +13,11 @@ fluidPage(
   sidebarLayout(
     sidebarPanel(
       wellPanel(
-        h4("Semafor (ad/bd->dc):"),
-        uiOutput("semaforadbd")
+        fluidRow(
+          column(6, selectInput("semafor", "Semafor:", choices = names(semaforji))),
+          column(6, actionButton("spr_semafor", "Spremeni"))
+        ),
+        uiOutput("stanjesemaforjev")
       ),
       wellPanel(
         fluidRow(
