@@ -183,7 +183,6 @@ server <- function(input, output) {
         }
         # zrebamo kam gre naslednji
         p = length(povezave[[cesta]])
-        print(cesta) ####
         if(p > 0){
           ci = 1
           u = runif(1)
@@ -420,11 +419,12 @@ server <- function(input, output) {
     plot(c(0,10), c(1000, 1000), type = 'l', xlim = c(0, 1000), ylim = c(0,1000), xlab = 'x', ylab = 'y')
     for (c in rownames(ceste)) {
       #pogledamo odseke po 100 m
-      odsekov = (ceste[c,5]/100)
+      odsekov = as.integer((ceste[c,5]-1)/100) + 1
+      l_odsek = ceste[c,5]/odsekov
       avtov = vector(length = odsekov)
       kje = 1
       for(a in odziv$avti[[c]]){
-        while (kje*100 < a) {
+        while (kje*l_odsek < a) {
           kje = kje + 1
         }
         avtov[kje] = avtov[kje] + 1
@@ -443,7 +443,7 @@ server <- function(input, output) {
         obrbarva = ""
         if(avtov[j] > 1){
           r = dt*input$animacija
-          hit = -bremza*(-r + sqrt(max(0,r*r - 2*(((100/(avtov[j]))-avto)/bremza))))
+          hit = -bremza*(-r + sqrt(max(0,r*r - 2*(((l_odsek/(avtov[j]))-avto)/bremza))))
           obr = hit/odziv$omejitve[[c]]
           #barva glede na obremenitev
           if(obr > 1/2){
