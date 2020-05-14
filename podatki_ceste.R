@@ -27,7 +27,7 @@ koor["b",] = c(600,1000)
 koor["c",] = c(1000,600)
 koor["d",] = c(650,50)
 
-semaforji = NULL
+semaforji = list()
 semaforji$"d" = data.frame(matrix(nrow = 2, ncol = 2))
 colnames(semaforji$"d") = c("a_d__d_c", "b_d__d_c")
 semaforji$d[1,] = c(TRUE, FALSE)
