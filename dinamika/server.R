@@ -412,7 +412,7 @@ server <- function(input, output) {
   #
   output$omrezje <- renderPlot({
     req(session$timer)
-    plot(c(0,10), c(1000, 1000), type = 'l', xlim = c(0, 1000), ylim = c(0,1000), xlab = 'x', ylab = 'y')
+    plot(c(), c(), type = 'l', xlim = c(0, 1000), ylim = c(0,1000), xlab = 'x', ylab = 'y')
     i = 1
     for (c in rownames(ceste)) {
       # barva glede na obremenitev, zelena-rumena-rdeca
@@ -446,7 +446,7 @@ server <- function(input, output) {
   #
   output$obremenitev <- renderPlot({
     req(session$timer)
-    plot(c(0,10), c(1000, 1000), type = 'l', xlim = c(0, 1000), ylim = c(0,1000), xlab = 'x', ylab = 'y')
+    plot(c(), c(), type = 'l', xlim = c(0, 1000), ylim = c(0,1000), xlab = 'x', ylab = 'y')
     for (c in rownames(ceste)) {
       #pogledamo odseke po 100 m
       odsekov = as.integer((ceste[c,5]-1)/100) + 1
