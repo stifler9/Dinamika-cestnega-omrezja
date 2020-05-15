@@ -2,7 +2,8 @@ library(Rlab)
 library(shiny)
 library(shinyjs)
 
-source("../podatki_ceste.r")
+#source("../podatki_ceste.r")
+source("../podatki/ceste_app.R")
 
 fluidPage(
   

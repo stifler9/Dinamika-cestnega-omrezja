@@ -2,18 +2,24 @@ library(shiny)
 
 shinyServer(function(input, output) {
     
+    #vsi podatki o slovenskih cestah
     podatki_ceste <- read.csv2("../podatki/urejeni_podatki.csv")
     
     odziv = reactiveValues()
+    #ceste, ki delno ali pripadajo omrezju
     odziv$cestedva = data.frame()
     odziv$cesteena = data.frame()
+    #vozlisca, ki jih lahko dodajamo
     odziv$vsavozlisca = unique(c(levels(podatki_ceste[,"Od"]), levels(podatki_ceste[,"Do"])))
     odziv$iskanavozlisca = unique(c(levels(podatki_ceste[,"Od"]), levels(podatki_ceste[,"Do"])))
     odziv$dodanavozlisca = c()
     odziv$dodanx = c()
     odziv$dodany = c()
+    #tabela za trenutni semafor, ki ga zelimo uvesti
     odziv$semafortabela = data.frame()
+    # imena za semafor (od katere ceste do katere)
     odziv$semaforopcije = c()
+    # shranimo semaforje, ki jih bomo potrebovali za omrezje
     odziv$semaforji = list()
     
     najdiVozlisca <- function(){
@@ -24,6 +30,7 @@ shinyServer(function(input, output) {
       }
     }
     
+    #sproti prikazujemo, katere ceste ze pripadajo omrezj in katere delno
     updateCeste <- function(){
       ind1 = c()
       ind2 = c()
@@ -73,16 +80,24 @@ shinyServer(function(input, output) {
         ceste[,3] = character()
         ceste[,4] = logical()
         ceste[,5] = numeric()
+        ceste[,6] = numeric()
+        ceste[,7] = numeric()
+        sekund_d = 60*60*24
+        vozila = list()
         for(i in 1:n){
           barva = ""
+          omejitev = 50
           if(odziv$cestedva[i,"Kategorija"] == "AC"){
             barva = "green"
+            omejitev = 130
           }else if(odziv$cestedva[i,"Kategorija"] == "HC"){
             barva = "blue"
+            omejitev = 110
           }else if(odziv$cestedva[i,"Kategorija"] %in% c("G1", "R1")){
             barva = "red"
           }else{
             barva = "orange"
+            omejitev = 90
           }
           zacetna = FALSE
           if(i %in% input$zacetneceste){zacetna = TRUE}
@@ -90,36 +105,55 @@ shinyServer(function(input, output) {
                                                                                              as.character(odziv$cestedva[i,"Do"]),
                                                                                              barva)
           ceste[paste(odziv$cestedva[i,"Od"], odziv$cestedva[i,"Do"], odziv$cestedva[i,"Kategorija"], sep="_"),4] = zacetna
-          ceste[paste(odziv$cestedva[i,"Od"], odziv$cestedva[i,"Do"], odziv$cestedva[i,"Kategorija"], sep="_"),5] = odziv$cestedva[i,"Dolzina"]
+          ceste[paste(odziv$cestedva[i,"Od"], odziv$cestedva[i,"Do"], odziv$cestedva[i,"Kategorija"], sep="_"),c(5,6,7)] = c(odziv$cestedva[i,"Dolzina"],
+                                                                                                                             omejitev,
+                                                                                                                             round(min(1,2*(odziv$cestedva[i, "Vsa.vozila"]/sekund_d)), 4))
+          vozila[[paste(odziv$cestedva[i,"Od"], odziv$cestedva[i,"Do"], odziv$cestedva[i,"Kategorija"], sep="_")]] = odziv$cestedva[i, "Vsa.vozila"]
         }
         ceste[,1] = as.character(ceste[,1])
         ceste[,2] = as.character(ceste[,2])
         ceste[,3] = as.character(ceste[,3])
         ceste[,4] = as.logical(ceste[,4])
         ceste[,5] = as.numeric(ceste[,5])
+        ceste[,6] = as.numeric(ceste[,6])
+        ceste[,7] = as.numeric(ceste[,7])
         
-        #konstruiramo podatke o koordinatah
+        #konstruiramo podatke o koordinatah, povezavah, verjetnostih
         koor = data.frame()
         koor[,1] = numeric()
         koor[,2] = numeric()
-        povezave = NULL
+        povezave = list()
+        verjetnosti = list()
         for(i in 1:length(odziv$dodanavozlisca)){
           koor[odziv$dodanavozlisca[i],] = c(odziv$dodanx[i], odziv$dodany[i])
           vhodne = c()
           izhodne = c()
+          vhod_vozila = 0
+          izhod_vozila = 0
           for(c in rownames(ceste)){
             if(ceste[c,1] == odziv$dodanavozlisca[i]){
               if(!ceste[c,4]){
                 izhodne = c(izhodne, c)
+                izhod_vozila = izhod_vozila + vozila[[c]]
               }
             }
             if(ceste[c,2] == odziv$dodanavozlisca[i]){
               vhodne = c(vhodne, c)
+              vhod_vozila = vhod_vozila + vozila[[c]]
             }
           }
+          # verjetnosti take, da se izide stevilo vseh vozil na cestah
+          # ce je manj ali enako vozil, ki pridejo v krizisce, kot teh, ki odidejo, se prehodne verjetnosti sestejejo v 1,
+          # sicer v nekaj manj
+          vhod_vozila = max(vhod_vozila, izhod_vozila)
           if(length(izhodne) > 0){
             for(v in vhodne){
-              povezave[[v]] = izhodne
+              povezave[[v]] <- izhodne
+              verj = c()
+              for(iz in izhodne){
+                verj = c(verj, vozila[[iz]])
+              }
+              verjetnosti[[v]] = round(verj/vhod_vozila, 3)
             }
           }
         }
@@ -129,11 +163,14 @@ shinyServer(function(input, output) {
         }
         
         #shranimo
-        dump(c("ceste", "koor", "povezave", "semaforji"), file = "../podatki/ceste_app.R")
+        dump(c("ceste", "koor", "povezave", "verjetnosti", "semaforji"), file = "../podatki/ceste_app.R")
         print("shranjeno")
+      }else{
+        print("Ni cest!")
       }
     })
     
+    #ko spremenimo v katerem vozliscu zelimo semafor, se posodobi katere rdece luci so lahko na voljo
     observeEvent(input$vozliscesemafor, {
       if(!is.null(input$vozliscesemafor)){
         vhodne = c()
@@ -170,6 +207,7 @@ shinyServer(function(input, output) {
       }
     })
     
+    # dodamo eljeno opcijo semaforja v tabelo
     observeEvent(input$dodajopcijosemaforja, {
       dodatek = c()
       for(opt in odziv$semaforopcije){
@@ -182,12 +220,14 @@ shinyServer(function(input, output) {
       odziv$semafortabela[input$opcijasemaforja,] = dodatek
     })
     
+    #shranimo tabelo za zeljen semafor
     observeEvent(input$dodajsemafor, {
       odziv$semaforji[[input$vozliscesemafor]] = odziv$semafortabela
       odziv$semafortabela = data.frame()
       odziv$semaforopcije = NULL
     })
     
+    #iberemovozlisce za dodajanje v omrezje
     output$izbira_vozlisca <- renderUI({
       selectInput("izbranovozlisce", "Izberi vozlisce:", choices = odziv$iskanavozlisca)
     })
@@ -199,16 +239,17 @@ shinyServer(function(input, output) {
         h5(paste0("x: ", round(input$omrezje_klik$x,2), "\ny: ", round(input$omrezje_klik$y,2)))
       }
     })
-
+    
+    # podatki o vseh cestah
     output$ceste <- renderTable(podatki_ceste)
     
     izpisvozlisc <- function(){
       n = length(odziv$dodanavozlisca)
       if(n > 0){
-        txt = "Izbrana vozlisca: "
+        txt = 'Izbrana vozlisca:  '
         for(i in 1:n){
           txt = paste(txt, odziv$dodanavozlisca[i],
-                      " (", odziv$dodanx[i], ", ", odziv$dodany[i], "), ", sep = "")
+                      " (", odziv$dodanx[i], ", ", odziv$dodany[i], '),  ', sep = "")
         }
         return(txt)
       }else{
@@ -220,21 +261,22 @@ shinyServer(function(input, output) {
       izpisvozlisc()
     })
     
+    # za oznacevanje katere ceste naj bodo zacetne
     output$zacetneui <- renderUI({
       checkboxGroupInput("zacetneceste", "Zacetne ceste:",
                          choices = c(1:dim(odziv$cestedva)[1]))
     })
     
+    #semafor
     output$semaforji <- renderUI({
       selectInput("vozliscesemafor", "Vozlisce:", choices = odziv$dodanavozlisca)
     })
-    
     output$semaforjirdece <- renderUI({
       checkboxGroupInput("rdeceluci", "Rdece luci:", choices = odziv$semaforopcije)
     })
-    
     output$tabelardecih <- renderTable(odziv$semafortabela)
     
+    #iris cestnega omrezja
     output$omrezje <- renderPlot({
       plot(c(), c(), type = 'l', xlim = c(0, 1000), ylim = c(0,1000), xlab = 'x', ylab = 'y')
       n = length(odziv$dodanavozlisca)

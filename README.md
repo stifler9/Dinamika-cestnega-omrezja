@@ -12,9 +12,16 @@ kjer je lambda pozitiven faktor prilagajanja hitrosti, v_2 je hitrost vozila pre
 
 Zraven postavimo omejitev pojemka, saj avto ne more zabremzati z neomejenim pojemkom. Temu dodamo se upostevanje varnostne razdalje. Ce voznik opazi, da se ne bo mogel ustaviti na varni razdalji v primeru, da vozilo pred njim maksimalno zabremza, potem le-ta maksimalno zabremza do varne razdalje.
 
-### Zagon:
+### Zagon aplikacije za uvoz cest:
 Za uvoz cest Shiny aplikacija (datoteka **uvozcest/server.R**) v njej skonstruiramo cestno omrezje in ga shranimo.
+* (tab Ceste) Poglej si slovenske ceste na voljo
+* (tab Omrezje) Izberi koordinate in vozlisce in ga dodaj v omrezje
+* (tab Pripadajoce ceste) Poglej katere ceste pripadajo dodanim vozliscem, ko koncas z dodajanjem vozlisc izberi, katere ceste naj bodo zacetne (na katerih cestah se na zacetku pojavljajo avti)
+* (tab Ceste z enim vozliscem) Poglej katere ceste potrebujejo samo se eno vozlisce, da bodo vkljucene v omrezje
+* (tab Semaforji) Na koncu po potrebi v zeljenem vozliscu dodaj semafor in izberi njegove opcije
+Ko koncas shrani cestno omrezje in pojdi na naslednjo aplikacijo.
 
+### Zagon dinamicne aplikacije:
 Za vizualizacijo dinamike omrezja postavljena Shiny aplikacija (datoteka **dinamika/server.R** za zagon). Ta nam dopusca:
 - da dolocamo prehodno verjetnost avtomobilov
 - da spreminjamo rdeco in zelono luc na semaforju,

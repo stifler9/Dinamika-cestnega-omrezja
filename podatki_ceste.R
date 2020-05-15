@@ -4,20 +4,29 @@ ceste[,2] = character()
 ceste[,3] = character()
 ceste[,4] = logical()
 ceste[,5] = numeric()
-ceste["a_b",] = c("a", "b", 'blue', TRUE, 1050)
-ceste["a_d",] = c("a", "d", 'gold3', TRUE, 900)
-ceste["b_c",] = c("b", "c", 'red', FALSE, 700)
-ceste["b_d",] = c("b", "d", 'green4', FALSE, 800)
-ceste["d_c",] = c("d", "c", 'purple', FALSE, 700)
+ceste[,6] = numeric()
+ceste[,7] = numeric()
+ceste["a_b",] = c("a", "b", 'blue', TRUE, 1050, 70, 0.25)
+ceste["a_d",] = c("a", "d", 'gold3', TRUE, 900, 110, 0.3)
+ceste["b_c",] = c("b", "c", 'red', FALSE, 700, 70, 0)
+ceste["b_d",] = c("b", "d", 'green4', FALSE, 800, 70, 0)
+ceste["d_c",] = c("d", "c", 'purple', FALSE, 700, 110, 0)
 ceste[,4] = as.logical(ceste[,4])
 ceste[,5] = as.numeric(ceste[,5])
-# ceste[[c]][4] == TRUE, ce je cesta zacetna
-# ceste[[c]][5] = dolzina
+ceste[,6] = as.numeric(ceste[,6])
+ceste[,7] = as.numeric(ceste[,7])
+# ceste[c,] == c(Od, Do, barva, zacetna cesta, dolzina, zacetna omejitev, zacetna intenzivnost prihodov)
 
 povezave = NULL
 povezave$"a_b" = c("b_c","b_d")
 povezave$"b_d" = c("d_c")
 povezave$"a_d" = c("d_c")
+
+verjetnosti = list()
+for(i in names(povezave)){
+  n = length(povezave[[i]])
+  verjetnosti[[i]] = rep(1/n, n)
+}
 
 koor = data.frame()
 koor[,1] = numeric()

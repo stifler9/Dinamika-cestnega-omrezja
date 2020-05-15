@@ -3,6 +3,23 @@ library(shiny)
 shinyUI(fluidPage(
 
     titlePanel("Uvoz cest"),
+    
+    #hocemo tako velike presledke, kot visina tabele
+    tags$style("
+      .checkbox { /* checkbox is a div class*/
+        line-height: 25px;
+        margin-bottom: 16px; /*set the margin, so boxes don't overlap*/
+      }
+      input[type='checkbox']{ /* style for checkboxes */
+        width: 16px; /*Desired width*/
+        height: 16px; /*Desired height*/
+        line-height: 16px; 
+      }
+      span { 
+          margin-left: 10px;  /*set the margin, so boxes don't overlap labels*/
+          line-height: 16px; 
+      }
+    "),
 
     sidebarLayout(
         sidebarPanel(
@@ -21,7 +38,7 @@ shinyUI(fluidPage(
             tabsetPanel(
                 ## Vse ceste
                 tabPanel("Ceste", tableOutput("ceste")),
-                tabPanel("Dodana vozlisca", 
+                tabPanel("Omrezje", 
                          plotOutput("omrezje", click = "omrezje_klik", height = '700px'), 
                          textOutput("vkljucenavozlisca")),
                 tabPanel("Pripadajoce ceste",
@@ -38,7 +55,7 @@ shinyUI(fluidPage(
                             column(6, numericInput("opcijasemaforja", "Opcija semaforja:", value = 1, min = 1, max = 10, step = 1)),
                             column(6, actionButton("dodajopcijosemaforja", "Dodaj opcijo"))
                          ),
-                         fluidRow(actionButton("dodajsemafor", "Dodaj semafor")),
+                         wellPanel(actionButton("dodajsemafor", "Dodaj semafor")),
                          tableOutput("tabelardecih"))
             )
         )

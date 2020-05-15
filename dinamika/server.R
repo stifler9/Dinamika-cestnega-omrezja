@@ -4,7 +4,8 @@ library(shinyjs)
 
 server <- function(input, output) {
   
-  source("../podatki_ceste.r")
+  #source("../podatki_ceste.r")
+  source("../podatki/ceste_app.R")
   source("../vozniki.r")
   
   initavti <- function(){
@@ -31,15 +32,14 @@ server <- function(input, output) {
   initomejitve <- function(){
     ret = list()
     for (c in rownames(ceste)) {
-      ret[[c]] = 70
+      ret[[c]] = ceste[c,6]
     }
     return(ret)
   }
   initprehodne <- function(){
     ret = list()
-    for (c in names(povezave)) {
-      n = length(povezave[[c]])
-      ret[[c]] = round(rep(1/n, n),2)
+    for (c in names(verjetnosti)) {
+      ret[[c]] = verjetnosti[[c]]
     }
     return(ret)
   }
@@ -47,7 +47,7 @@ server <- function(input, output) {
     ret = list()
     for (c in rownames(ceste)) {
       if(ceste[c,4]){
-        ret[[c]] = 0.3
+        ret[[c]] = ceste[c,7]
       }
     }
     return(ret)
@@ -126,10 +126,10 @@ server <- function(input, output) {
   
   output$stanjesemaforjev <- renderUI({
     req(input$semafor)
-    lbl = "Rdece:"
+    lbl = "Rdece:\n"
     for (i in colnames(semaforji[[input$semafor]])) {
       if(semaforji[[input$semafor]][odziv$stanjesemafor[[input$semafor]],i]){
-        lbl = paste(lbl, i, ", ")
+        lbl = paste(lbl, i, ",\n")
       }
     }
     h5(lbl)
@@ -366,14 +366,14 @@ server <- function(input, output) {
   observeEvent(input$manjintenzivno, {
     req(input$cestahitrost)
     if(odziv$intenzivnosti[[input$cestahitrost]] > 0){
-      odziv$intenzivnosti[[input$cestahitrost]] = round(odziv$intenzivnosti[[input$cestahitrost]] - 0.02, 2)
+      odziv$intenzivnosti[[input$cestahitrost]] = round(odziv$intenzivnosti[[input$cestahitrost]] - 0.01, 2)
     }
   })
   
   observeEvent(input$boljintenzivno, {
     req(input$cestahitrost)
     if(odziv$intenzivnosti[[input$cestahitrost]] < 1){
-      odziv$intenzivnosti[[input$cestahitrost]] = round(odziv$intenzivnosti[[input$cestahitrost]] + 0.02, 2)
+      odziv$intenzivnosti[[input$cestahitrost]] = round(odziv$intenzivnosti[[input$cestahitrost]] + 0.01, 2)
     }
   })
   
