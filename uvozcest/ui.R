@@ -7,7 +7,7 @@ shinyUI(fluidPage(
     #hocemo tako velike presledke, kot visina tabele
     tags$style("
       .checkbox { /* checkbox is a div class*/
-        line-height: 25px;
+        line-height: 16px;
         margin-bottom: 16px; /*set the margin, so boxes don't overlap*/
       }
       input[type='checkbox']{ /* style for checkboxes */
