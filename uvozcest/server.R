@@ -15,6 +15,7 @@ shinyServer(function(input, output) {
     odziv$dodanavozlisca = c()
     odziv$dodanx = c()
     odziv$dodany = c()
+    odziv$vozlisceblizu = ""
     #tabela za trenutni semafor, ki ga zelimo uvesti
     odziv$semafortabela = data.frame()
     # imena za semafor (od katere ceste do katere)
@@ -227,7 +228,26 @@ shinyServer(function(input, output) {
       odziv$semaforopcije = NULL
     })
     
-    #iberemovozlisce za dodajanje v omrezje
+    observeEvent(input$omrezje_klik, {
+      if(is.null(input$omrezje_klik)){
+        odziv$vozlisceblizu = ""
+      }else{
+        odziv$vozlisceblizu = ""
+        dist = Inf
+        n = length(odziv$dodanavozlisca)
+        if(n > 0){
+          for(i in 1:n){
+            raz = (input$omrezje_klik$x - odziv$dodanx[i])^2 + (input$omrezje_klik$y - odziv$dodany[i])^2
+            if(raz < dist){
+              odziv$vozlisceblizu = odziv$dodanavozlisca[i]
+              dist = raz
+            }
+          }
+        }
+      }
+    })
+    
+    #izberemo vozlisce za dodajanje v omrezje
     output$izbira_vozlisca <- renderUI({
       selectInput("izbranovozlisce", "Izberi vozlisce:", choices = odziv$iskanavozlisca)
     })
@@ -240,6 +260,10 @@ shinyServer(function(input, output) {
       }
     })
     
+    output$bliznjevozlisce <- renderUI({
+      h5(paste("Najblizje:",odziv$vozlisceblizu))
+    })
+    
     # podatki o vseh cestah
     output$ceste <- renderTable(podatki_ceste)
     
@@ -248,7 +272,7 @@ shinyServer(function(input, output) {
       if(n > 0){
         txt = 'Izbrana vozlisca:  '
         for(i in 1:n){
-          txt = paste(txt, odziv$dodanavozlisca[i],
+          txt = paste0(txt, '\n', odziv$dodanavozlisca[i],
                       " (", odziv$dodanx[i], ", ", odziv$dodany[i], '),  ', sep = "")
         }
         return(txt)
