@@ -365,15 +365,19 @@ server <- function(input, output) {
   
   observeEvent(input$manjintenzivno, {
     req(input$cestahitrost)
-    if(odziv$intenzivnosti[[input$cestahitrost]] > 0){
-      odziv$intenzivnosti[[input$cestahitrost]] = round(odziv$intenzivnosti[[input$cestahitrost]] - 0.01, 2)
+    if(!is.null(odziv$intenzivnosti[[input$cestahitrost]])){
+      if(odziv$intenzivnosti[[input$cestahitrost]] > 0){
+        odziv$intenzivnosti[[input$cestahitrost]] = round(odziv$intenzivnosti[[input$cestahitrost]] - 0.01, 2)
+      }
     }
   })
   
   observeEvent(input$boljintenzivno, {
     req(input$cestahitrost)
-    if(odziv$intenzivnosti[[input$cestahitrost]] < 1){
-      odziv$intenzivnosti[[input$cestahitrost]] = round(odziv$intenzivnosti[[input$cestahitrost]] + 0.01, 2)
+    if(!is.null(odziv$intenzivnosti[[input$cestahitrost]])){
+      if(odziv$intenzivnosti[[input$cestahitrost]] < 1){
+        odziv$intenzivnosti[[input$cestahitrost]] = round(odziv$intenzivnosti[[input$cestahitrost]] + 0.01, 2)
+      }
     }
   })
   
