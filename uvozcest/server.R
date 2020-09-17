@@ -1,17 +1,16 @@
 library(shiny)
 
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
     
     #vsi podatki o slovenskih cestah
     podatki_ceste <- read.csv2("../podatki/urejeni_podatki.csv")
     
     odziv = reactiveValues()
+    #vozlisca, ki jih lahko dodajamo
+    odziv$vsavozlisca = unique(c(levels(podatki_ceste[,"Od"]), levels(podatki_ceste[,"Do"])))
     #ceste, ki delno ali pripadajo omrezju
     odziv$cestedva = data.frame()
     odziv$cesteena = data.frame()
-    #vozlisca, ki jih lahko dodajamo
-    odziv$vsavozlisca = unique(c(levels(podatki_ceste[,"Od"]), levels(podatki_ceste[,"Do"])))
-    odziv$iskanavozlisca = unique(c(levels(podatki_ceste[,"Od"]), levels(podatki_ceste[,"Do"])))
     odziv$dodanavozlisca = c()
     odziv$dodanx = c()
     odziv$dodany = c()
@@ -23,13 +22,6 @@ shinyServer(function(input, output) {
     # shranimo semaforje, ki jih bomo potrebovali za omrezje
     odziv$semaforji = list()
     
-    najdiVozlisca <- function(){
-      if(input$iskanje == ""){
-        odziv$iskanavozlisca = odziv$vsavozlisca
-      }else{
-        odziv$iskanavozlisca = odziv$vsavozlisca[grep(input$iskanje, odziv$vsavozlisca, ignore.case = TRUE)]
-      }
-    }
     
     #sproti prikazujemo, katere ceste ze pripadajo omrezj in katere delno
     updateCeste <- function(){
@@ -52,10 +44,6 @@ shinyServer(function(input, output) {
       odziv$cestedva = podatki_ceste[ind2,]
     }
     
-    observeEvent(input$iskanje, {
-      najdiVozlisca()
-    })
-    
     observeEvent(input$dodajvozlisce, {
       if(is.null(input$omrezje_klik)){
         print("Ni izbranih koordinat!")
@@ -63,9 +51,10 @@ shinyServer(function(input, output) {
         odziv$dodanavozlisca = c(odziv$dodanavozlisca, input$izbranovozlisce)
         odziv$dodanx = c(odziv$dodanx, round(input$omrezje_klik$x,2))
         odziv$dodany = c(odziv$dodany, round(input$omrezje_klik$y,2))
-        odziv$vsavozlisca = odziv$vsavozlisca[odziv$vsavozlisca != input$izbranovozlisce]
-        najdiVozlisca()
         updateCeste()
+        odziv$vsavozlisca = odziv$vsavozlisca[odziv$vsavozlisca != input$izbranovozlisce] #ne moremo se enkrat izbrati
+        updateSelectInput(session, 'izbranovozlisce', "Izberi vozlisce:", choices = odziv$vsavozlisca,
+                          selected = NULL)
       }
     })
     
@@ -249,7 +238,7 @@ shinyServer(function(input, output) {
     
     #izberemo vozlisce za dodajanje v omrezje
     output$izbira_vozlisca <- renderUI({
-      selectInput("izbranovozlisce", "Izberi vozlisce:", choices = odziv$iskanavozlisca)
+      selectInput("izbranovozlisce", "Izberi vozlisce:", choices = odziv$vsavozlisca)
     })
     
     output$koordinate <- renderUI({

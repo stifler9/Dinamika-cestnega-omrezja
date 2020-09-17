@@ -24,7 +24,6 @@ shinyUI(fluidPage(
     sidebarLayout(
         sidebarPanel(
             wellPanel(
-                textInput("iskanje", "Najdi vozlisce:", value = ""),
                 uiOutput("izbira_vozlisca"),
                 uiOutput("koordinate"),
                 uiOutput("bliznjevozlisce"),
